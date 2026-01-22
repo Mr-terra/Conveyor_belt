@@ -32,4 +32,4 @@ This test file demonstrates the automatic state monitoring and error handling sy
 
 ## Integration with Main System
 
-The main system uses the same StateErrorManager but with more comprehensive state transition rules defined in `setupStateMonitoring()` in `main.cpp`.
+The main system uses the same StateManager but with more comprehensive state transition rules defined in `setupStateMonitoring()` in `main.cpp`.

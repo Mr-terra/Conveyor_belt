@@ -21,13 +21,13 @@ This example demonstrates the complete architecture for automatic state monitori
        ▼                     ▼                     ▼
 ┌───────────────────────────────────────────────────────────────┐
 │                    STATE VARIABLES                             │
-│  (Global variables observed by StateErrorManager)              │
+│  (Global variables observed by StateManager)              │
 └───────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Components
 
-### 1. StateErrorManager (Pure Observer)
+### 1. StateManager (Pure Observer)
 - **Responsibility**: Monitor state variables and apply rules
 - **Does NOT**: Call business objects directly
 - **Uses**: Callbacks to notify about errors
@@ -47,9 +47,9 @@ This example demonstrates the complete architecture for automatic state monitori
 Each module configures its own state monitoring:
 
 ```cpp
-void Conveyor::initializeWithStateMonitoring(StateErrorManager& stateErrorManager) {
+void Conveyor::initializeWithStateMonitoring(StateManager& StateManager) {
     initialize(); // Basic initialization
-    configureStateMonitoring(stateErrorManager, &conveyorState); // Auto-config
+    configureStateMonitoring(StateManager, &conveyorState); // Auto-config
 }
 ```
 
@@ -57,19 +57,19 @@ void Conveyor::initializeWithStateMonitoring(StateErrorManager& stateErrorManage
 Each module defines its own rules:
 
 ```cpp
-void Conveyor::setupStateRules(StateErrorManager& stateErrorManager) {
+void Conveyor::setupStateRules(StateManager& StateManager) {
     // Define expected transitions
-    stateErrorManager.addStateRule("Conveyor", "STOPPED", "RUNNING", ERROR_INFO, 
+    StateManager.addStateRule("Conveyor", "STOPPED", "RUNNING", ERROR_INFO, 
         "Conveyor started successfully");
     
     // Define forbidden transitions
-    stateErrorManager.addForbiddenTransition("Conveyor", "ERROR", "ERROR", 
+    StateManager.addForbiddenTransition("Conveyor", "ERROR", "ERROR", 
         "Conveyor stuck in error state");
 }
 ```
 
 ### Automatic Monitoring
-StateErrorManager automatically detects all state changes:
+StateManager automatically detects all state changes:
 
 ```cpp
 void loop() {
@@ -79,8 +79,8 @@ void loop() {
     // Update state variables
     conveyorState = conveyor.getState();
     
-    // StateErrorManager detects changes and applies rules
-    stateErrorManager.monitorAllStates();
+    // StateManager detects changes and applies rules
+    StateManager.monitorAllStates();
 }
 ```
 
@@ -127,7 +127,7 @@ To add a new module to this architecture:
 ✅ **Clean Architecture**: Proper separation of concerns
 ✅ **Easy Extension**: Simple to add new modules
 ✅ **Automatic Error Detection**: Rules and transitions validated automatically
-✅ **No Circular Dependencies**: Modules don't know about StateErrorManager
+✅ **No Circular Dependencies**: Modules don't know about StateManager
 ✅ **Flexible Error Handling**: Change callbacks without modifying observation
 
 ## Key Principles

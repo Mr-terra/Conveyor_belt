@@ -1,6 +1,8 @@
 #include "scheduler.h"
 #include <Arduino.h>
 
+Scheduler scheduler;
+
 // State constants for scheduler (now declared in header)
 const String STATE_WAITING = "WAITING";
 const String STATE_CHECK_CONNECT = "CHECK_CONNECT";

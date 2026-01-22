@@ -4,7 +4,7 @@
 #include "check_connect.h"
 #include "init_position.h"
 #include "production.h"
-#include "state_error_manager.h"
+#include "state_manager.h"
 #include "sorter.h"
 #include "package_sorter.h"
 #include "error.h"
@@ -13,14 +13,14 @@
 #define STOP_BUTTON_PIN 8
 
 // Global objects
-Conveyor conveyor;
-Scheduler scheduler;
-CheckConnect checkConnect;
-InitPosition initPosition;
-Production production;
-StateErrorManager stateErrorManager;
-Sorter sorter;
-PackageSorter packageSorter;
+extern Conveyor conveyor;
+extern Scheduler scheduler;
+extern CheckConnect checkConnect;
+extern InitPosition initPosition;
+extern Production production;
+extern StateManager stateManager;
+extern Sorter sorter;
+extern PackageSorter packageSorter;
 
 // Global variables for states and conditions
 bool isConnectionOk = false;
@@ -42,7 +42,7 @@ void setup() {
     pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
 
     // Initialize all modules with automatic state monitoring
-    conveyor.initializeWithStateMonitoring(stateErrorManager);
+    conveyor.initialize(stateManager);
     scheduler.initialize();
     checkConnect.initialize();
     initPosition.initialize();
@@ -51,50 +51,50 @@ void setup() {
     packageSorter.initialize();
 
     // Setup automatic state monitoring and callbacks
-    setupStateMonitoring();
+    // setupStateMonitoring();
 
     Serial.println("System initialized. State: WAITING");
 }
 
-void setupStateMonitoring() {
-    // Start automatic monitoring
-    stateErrorManager.startAutomaticMonitoring();
+// void setupStateMonitoring() {
+//     // Start automatic monitoring
+//     stateErrorManager.startAutomaticMonitoring();
 
-    // Configure modules that don't auto-configure themselves yet
-    stateErrorManager.observeState(&sorterState, "Sorter", Sorter::stateToString);
-    stateErrorManager.observeState(&schedulerState, "Scheduler", Scheduler::stateToString);
+//     // Configure modules that don't auto-configure themselves yet
+//     stateErrorManager.observeState(&sorterState, "Sorter", Sorter::stateToString);
+//     stateErrorManager.observeState(&schedulerState, "Scheduler", Scheduler::stateToString);
 
-    // Add system-level forbidden transitions
-    stateErrorManager.addForbiddenTransition("Scheduler", "CHECK_CONNECT", "CHECK_CONNECT", 
-        "Stuck in CHECK_CONNECT state - connection failed");
-    stateErrorManager.addForbiddenTransition("Scheduler", "INIT_POSITIONS", "INIT_POSITIONS", 
-        "Stuck in INIT_POSITIONS state - initialization failed");
-    stateErrorManager.addForbiddenTransition("Sorter", "ERROR", "ERROR", 
-        "Sorter stuck in error state");
+//     // Add system-level forbidden transitions
+//     stateErrorManager.addForbiddenTransition("Scheduler", "CHECK_CONNECT", "CHECK_CONNECT", 
+//         "Stuck in CHECK_CONNECT state - connection failed");
+//     stateErrorManager.addForbiddenTransition("Scheduler", "INIT_POSITIONS", "INIT_POSITIONS", 
+//         "Stuck in INIT_POSITIONS state - initialization failed");
+//     stateErrorManager.addForbiddenTransition("Sorter", "ERROR", "ERROR", 
+//         "Sorter stuck in error state");
 
-    // Setup callbacks for error handling - separation of concerns
-    stateErrorManager.setErrorCallback([](const Error& error) {
-        Serial.print("⚠️  Error Callback: [");
-        Serial.print(error.getModule());
-        Serial.print("] ");
-        Serial.print(error.toString());
-        Serial.print(": ");
-        Serial.println(error.getMessage());
+//     // Setup callbacks for error handling - separation of concerns
+//     stateErrorManager.setErrorCallback([](const Error& error) {
+//         Serial.print("⚠️  Error Callback: [");
+//         Serial.print(error.getModule());
+//         Serial.print("] ");
+//         Serial.print(error.toString());
+//         Serial.print(": ");
+//         Serial.println(error.getMessage());
         
-        // Handle different error levels appropriately
-        if (error.getLevel() == ERROR_WARNING) {
-            Serial.println("   → WARNING level - logging only");
-        }
-    });
+//         // Handle different error levels appropriately
+//         if (error.getLevel() == ERROR_WARNING) {
+//             Serial.println("   → WARNING level - logging only");
+//         }
+//     });
 
-    stateErrorManager.setCriticalErrorCallback([]() {
-        Serial.println("🚨 CRITICAL ERROR Callback: Executing safety measures");
-        conveyor.stop();
-        sorter.stop();
-        scheduler.triggerStop();
-        isCriticalError = true;
-    });
-}
+//     stateErrorManager.setCriticalErrorCallback([]() {
+//         Serial.println("🚨 CRITICAL ERROR Callback: Executing safety measures");
+//         conveyor.stop();
+//         sorter.stop();
+//         scheduler.triggerStop();
+//         isCriticalError = true;
+//     });
+// }
 
 void loop() {
     // Read stop button
@@ -106,7 +106,7 @@ void loop() {
     schedulerState = scheduler.getState();
 
     // Automatic state monitoring - detects all state changes and applies rules
-    stateErrorManager.monitorAllStates();
+    stateManager.monitorAllStates();
 
     // State management by the scheduler
     String currentState = scheduler.getState();
@@ -150,7 +150,7 @@ void loop() {
     }
 
     // Error management is now automatic through state monitoring
-    // The StateErrorManager will automatically execute safety measures for critical errors
+    // The StateManager will automatically execute safety measures for critical errors
 
     // Delay to avoid overload
     delay(100);

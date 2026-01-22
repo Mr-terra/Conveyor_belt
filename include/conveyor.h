@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+// Forward declaration
+class StateManager;
+
 // State constants for conveyor
 extern const String CONVEYOR_STATE_STOPPED;
 extern const String CONVEYOR_STATE_RUNNING;
@@ -10,7 +13,7 @@ extern const String CONVEYOR_STATE_ERROR;
 
 class Conveyor {
 public:
-    void initialize();
+    void initialize(StateManager& stateManager);
     void start();
     void stop();
     String getState() const;
@@ -21,16 +24,10 @@ public:
     static String stateToString(String state);
     
     // Module self-configuration
-    static void setupStateRules(StateErrorManager& stateErrorManager);
+    static void setupStateRules(StateManager& stateManager);
     
     // State monitoring configuration
-    static void configureStateMonitoring(StateErrorManager& stateErrorManager, String* stateVariable);
-    
-    // Module initialization with automatic state monitoring setup
-    void initializeWithStateMonitoring(StateErrorManager& stateErrorManager);
-    
-    // Setup physical state checks for automatic error detection
-    static void setupPhysicalChecks(StateErrorManager& stateErrorManager);
+    static void configureStateMonitoring(StateManager& stateManager, String* stateVariable);
 
 private:
     String conveyorState;

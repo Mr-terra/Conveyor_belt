@@ -1,6 +1,8 @@
 #include "sorter.h"
 #include <Arduino.h>
 
+Sorter sorter;
+
 // Constants for sorter pin
 #define SORTER_PIN 6
 

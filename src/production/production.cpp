@@ -2,6 +2,8 @@
 #include "conveyor.h"
 #include <Arduino.h>
 
+Production production;
+
 // External conveyor object
 extern Conveyor conveyor;
 

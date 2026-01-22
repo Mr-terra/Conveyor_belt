@@ -1,6 +1,8 @@
 #include "init_position.h"
 #include <Arduino.h>
 
+InitPosition initPosition;
+
 void InitPosition::initialize() {
     Serial.println("InitPosition initialized");
 }
