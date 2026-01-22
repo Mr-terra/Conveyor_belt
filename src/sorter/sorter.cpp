@@ -4,13 +4,21 @@
 // Constants for sorter pin
 #define SORTER_PIN 6
 
-// State constants for sorter
+// State constants for sorter (now declared in header)
 const String SORTER_STATE_INITIAL = "INITIAL";
 const String SORTER_STATE_MOVING = "MOVING";
 const String SORTER_STATE_ERROR = "ERROR";
 
-// Global variable for sorter state
-String sorterState = SORTER_STATE_INITIAL;
+// State conversion function for automatic monitoring
+String Sorter::stateToString(String state) {
+    if (state == SORTER_STATE_INITIAL) return "INITIAL";
+    if (state == SORTER_STATE_MOVING) return "MOVING";
+    if (state == SORTER_STATE_ERROR) return "ERROR";
+    return "UNKNOWN";
+}
+
+// External state variable (defined in main.cpp)
+extern String sorterState;
 
 void Sorter::initialize() {
     // Initialize sorter pin
