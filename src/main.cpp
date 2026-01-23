@@ -9,9 +9,6 @@
 #include "package_sorter.h"
 #include "error.h"
 
-// Constants for stop button pin
-// #define STOP_BUTTON_PIN 8
-
 // Global objects
 extern Conveyor conveyor;
 extern Scheduler scheduler;
@@ -62,46 +59,6 @@ void setup() {
 
     Serial.println("System initialized. State: WAITING");
 }
-
-// void setupStateMonitoring() {
-//     // Start automatic monitoring
-//     stateErrorManager.startAutomaticMonitoring();
-
-//     // Configure modules that don't auto-configure themselves yet
-//     stateErrorManager.observeState(&sorterState, "Sorter", Sorter::stateToString);
-//     stateErrorManager.observeState(&schedulerState, "Scheduler", Scheduler::stateToString);
-
-//     // Add system-level forbidden transitions
-//     stateErrorManager.addForbiddenTransition("Scheduler", "CHECK_CONNECT", "CHECK_CONNECT", 
-//         "Stuck in CHECK_CONNECT state - connection failed");
-//     stateErrorManager.addForbiddenTransition("Scheduler", "INIT_POSITIONS", "INIT_POSITIONS", 
-//         "Stuck in INIT_POSITIONS state - initialization failed");
-//     stateErrorManager.addForbiddenTransition("Sorter", "ERROR", "ERROR", 
-//         "Sorter stuck in error state");
-
-//     // Setup callbacks for error handling - separation of concerns
-//     stateErrorManager.setErrorCallback([](const Error& error) {
-//         Serial.print("⚠️  Error Callback: [");
-//         Serial.print(error.getModule());
-//         Serial.print("] ");
-//         Serial.print(error.toString());
-//         Serial.print(": ");
-//         Serial.println(error.getMessage());
-        
-//         // Handle different error levels appropriately
-//         if (error.getLevel() == ERROR_WARNING) {
-//             Serial.println("   → WARNING level - logging only");
-//         }
-//     });
-
-//     stateErrorManager.setCriticalErrorCallback([]() {
-//         Serial.println("🚨 CRITICAL ERROR Callback: Executing safety measures");
-//         conveyor.stop();
-//         sorter.stop();
-//         scheduler.triggerStop();
-//         isCriticalError = true;
-//     });
-// }
 
 void loop() {
     M5.update();
