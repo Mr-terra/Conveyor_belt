@@ -10,7 +10,7 @@
 #include "error.h"
 
 // Constants for stop button pin
-#define STOP_BUTTON_PIN 8
+// #define STOP_BUTTON_PIN 8
 
 // Global objects
 extern Conveyor conveyor;
@@ -33,16 +33,23 @@ String conveyorState = CONVEYOR_STATE_STOPPED;
 String sorterState = SORTER_STATE_INITIAL;
 String schedulerState = STATE_WAITING;
 
+// Timing pour mouvement continu
+unsigned long lastMoveTime = 0;
+const unsigned long moveInterval = 135; // ms entre chaque mouvement
+
 void setup() {
     // Initialize serial communication
-    Serial.begin(9600);
-    Serial.println("System initialization...");
-
-    // Initialize stop button pin
-    pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
+    Serial.begin(115200);
+    M5.begin();
+    
+    // Initialiser le système
+    conveyor.initialize(stateManager);
+    
+    Serial.println("🚀 System ready - Hardware monitoring active");
+    Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
 
     // Initialize all modules with automatic state monitoring
-    conveyor.initialize(stateManager);
+    // conveyor.initialize(stateManager);
     scheduler.initialize();
     checkConnect.initialize();
     initPosition.initialize();
@@ -97,8 +104,35 @@ void setup() {
 // }
 
 void loop() {
-    // Read stop button
-    isStopButtonPressed = digitalRead(STOP_BUTTON_PIN) == LOW;
+    M5.update();
+    
+    // ✨ ÉTAPE 1 : Lire l'état depuis le hardware
+    conveyor.monitorHardware();
+    
+    // ✨ ÉTAPE 2 : Le StateManager détecte les changements et applique les rules
+    stateManager.monitorAllStates();
+    
+    // Contrôle utilisateur
+    if (M5.BtnA.wasPressed()) {
+        conveyor.start();
+    }
+    if (M5.BtnB.wasPressed()) {
+        conveyor.stop();
+    }
+    if (M5.BtnC.wasPressed()) {
+        Serial.print("Current state (from hardware): ");
+        Serial.println(conveyorState);
+    }
+    
+    // Mouvement continu si en marche
+    if (conveyorState == CONVEYOR_STATE_RUNNING) {
+        if (millis() - lastMoveTime >= moveInterval) {
+            conveyor.move(true);
+            lastMoveTime = millis();
+        }
+    }
+    
+    delay(10);
 
     // Update global state variables for automatic monitoring
     conveyorState = conveyor.getState();
