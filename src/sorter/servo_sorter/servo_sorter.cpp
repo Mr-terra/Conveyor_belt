@@ -4,10 +4,27 @@
 
 static GoPlus2 goPlus;
 
-void ServoSorter::init()
+String ServoSorter::stateToString(String s)
+{
+    return s;
+}
+
+void ServoSorter::init(StateManager &stateManager)
 {
     goPlus.begin();
     goPlus.Servo_write_angle(SERVO_NUM0, 90); // neutre
+
+    // Observer l’état du servo
+    stateManager.observeState<String>(
+        &servoState,
+        "SERVO",
+        stateToString);
+
+    // Règles (statique, pas de dynamique ici)
+    stateManager.addStateRule("SERVO", "INIT", "*", ERROR_INFO, "Servo initialized");
+    stateManager.addStateRule("SERVO", "*", "ERROR", ERROR_CRITICAL, "Servo error");
+
+    servoState = "IDLE";
 }
 
 int ServoSorter::angleFor(Bin::Id bin) const
@@ -28,6 +45,16 @@ int ServoSorter::angleFor(Bin::Id bin) const
 void ServoSorter::moveTo(Bin::Id bin)
 {
     if (bin == Bin::NONE)
+    {
+        servoState = "ERROR";
         return;
-    goPlus.Servo_write_angle(SERVO_NUM0, angleFor(bin));
+    }
+
+    servoState = "MOVING";
+
+    int angle = angleFor(bin);
+    goPlus.Servo_write_angle(SERVO_NUM0, angle);
+
+    // ici tu pourrais plus tard vérifier un retour matériel
+    servoState = "IDLE";
 }

@@ -34,14 +34,15 @@ String schedulerState = STATE_WAITING;
 unsigned long lastMoveTime = 0;
 const unsigned long moveInterval = 135; // ms entre chaque mouvement
 
-void setup() {
+void setup()
+{
     // Initialize serial communication
     Serial.begin(115200);
     M5.begin();
-    
+
     // Initialiser le système
     conveyor.initialize(stateManager);
-    
+
     Serial.println("🚀 System ready - Hardware monitoring active");
     Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
 
@@ -60,35 +61,41 @@ void setup() {
     Serial.println("System initialized. State: WAITING");
 }
 
-void loop() {
+void loop()
+{
     M5.update();
-    
+
     // ✨ ÉTAPE 1 : Lire l'état depuis le hardware
     conveyor.monitorHardware();
-    
+
     // ✨ ÉTAPE 2 : Le StateManager détecte les changements et applique les rules
     stateManager.monitorAllStates();
-    
+
     // Contrôle utilisateur
-    if (M5.BtnA.wasPressed()) {
+    if (M5.BtnA.wasPressed())
+    {
         conveyor.start();
     }
-    if (M5.BtnB.wasPressed()) {
+    if (M5.BtnB.wasPressed())
+    {
         conveyor.stop();
     }
-    if (M5.BtnC.wasPressed()) {
+    if (M5.BtnC.wasPressed())
+    {
         Serial.print("Current state (from hardware): ");
         Serial.println(conveyorState);
     }
-    
+
     // Mouvement continu si en marche
-    if (conveyorState == CONVEYOR_STATE_RUNNING) {
-        if (millis() - lastMoveTime >= moveInterval) {
+    if (conveyorState == CONVEYOR_STATE_RUNNING)
+    {
+        if (millis() - lastMoveTime >= moveInterval)
+        {
             conveyor.move(true);
             lastMoveTime = millis();
         }
     }
-    
+
     delay(10);
 
     // Update global state variables for automatic monitoring
@@ -102,39 +109,57 @@ void loop() {
     // State management by the scheduler
     String currentState = scheduler.getState();
 
-    if (currentState == "WAITING") {
+    if (currentState == "WAITING")
+    {
         // Waiting for trigger
-        if (!isStopButtonPressed) {
+        if (!isStopButtonPressed)
+        {
             scheduler.triggerCheckConnect();
         }
-    } else if (currentState == "CHECK_CONNECT") {
+    }
+    else if (currentState == "CHECK_CONNECT")
+    {
         // Check connections
         isConnectionOk = checkConnect.checkConnections();
-        if (isConnectionOk) {
+        if (isConnectionOk)
+        {
             scheduler.triggerInitPositions();
-        } else {
+        }
+        else
+        {
             // Error will be detected automatically through state monitoring
             // The system will detect that we're stuck in CHECK_CONNECT state
         }
-    } else if (currentState == "INIT_POSITIONS") {
+    }
+    else if (currentState == "INIT_POSITIONS")
+    {
         // Initialize positions
         isProductionOk = initPosition.initializePositions();
-        if (isProductionOk) {
+        if (isProductionOk)
+        {
             scheduler.triggerProduction();
-        } else {
+        }
+        else
+        {
             // Error will be detected automatically through state monitoring
             // The system will detect that we're stuck in INIT_POSITIONS state
         }
-    } else if (currentState == "PRODUCTION") {
+    }
+    else if (currentState == "PRODUCTION")
+    {
         // Production cycle
-        if (isStopButtonPressed || isCriticalError) {
+        if (isStopButtonPressed || isCriticalError)
+        {
             production.stopProduction();
             scheduler.triggerStop();
-        } else {
+        }
+        else
+        {
             production.startProduction();
             // Read packages and sort
             String packageInfo = production.readPackage();
-            if (!packageInfo.isEmpty()) {
+            if (!packageInfo.isEmpty())
+            {
                 packageSorter.sortPackage(packageInfo);
             }
         }

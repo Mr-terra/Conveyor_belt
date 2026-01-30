@@ -3,36 +3,72 @@
 #include <Arduino.h>
 #include <M5Stack.h>
 
-#include "types.h"
-#include "rfid_reader/reader.h"
-#include "adresser/adresser.h"
-#include "servo_sorter/servo_sorter.h"
+#include "sorter_types.h"
+#include "reader.h"
+#include "adresser.h"
+#include "servo_sorter.h"
+#include "state_manager.h"
+#include "error.h"
 
-static RFIDReader  rfid;
-static Adresser    adresser;
+static RFIDReader rfid;
+static Adresser adresser;
 static ServoSorter servo;
+static String UID;
 
-void SorterController::init() {
+static String sorterStateToString(String s) { return s; } // signature attendue
+
+void SorterController::setupStateRules(StateManager &stateManager)
+{
+  stateManager.addStateRule("SORTER", "INIT_PRODUCTION", "WAITING", ERROR_INFO, "WAITING FOR PACKAGE");
+  stateManager.addStateRule("SORTER", "WAITING", "RFID_READ", ERROR_INFO, "PACKAGE READ");
+  stateManager.addStateRule("SORTER", "WAITING", "RFID_READING_ERROR", ERROR_WARNING, "COULDN'T READ THE PACKAGE");
+}
+
+void SorterController::init(StateManager &stateManager)
+{
   rfid.init();
-  servo.init();
+  servo.init(stateManager);
+
+  stateManager.observeState<String>(&sorterState, "SORTER", sorterStateToString);
+
+  setupStateRules(stateManager);
+
+  sorterState = "WAITING";
+
   Serial.println("SorterController ready");
 }
 
-void SorterController::update() {
-  String uid = rfid.readUid();
-  if (uid.isEmpty()) return;
+void SorterController::production()
+{
+  String uidRead = rfid.readUid();
 
-  Serial.print("UID: ");
-  Serial.println(uid);
-
-  Bin::Id bin = adresser.resolve(uid);
-  if (bin == Bin::NONE) {
-    Serial.println("Unknown UID");
+  if (uidRead.isEmpty())
+  {
+    // pas de carte -> reste WAITING
+    if (sorterState != "WAITING")
+      sorterState = "WAITING";
     return;
   }
 
-  Serial.print("Target: ");
-  Serial.println(Bin::toString(bin));
+  // carte lue
+  UID = uidRead;
+  sorterState = "RFID_READ";
+
+  Serial.print("UID: ");
+  Serial.println(uidRead);
+
+  Bin::Id bin = adresser.resolve(uidRead);
+  if (bin == Bin::NONE)
+  {
+    sorterState = "RFID_READING_ERROR";
+    Serial.println("Unknown UID");
+    // retour à WAITING après l’erreur
+    sorterState = "WAITING";
+    return;
+  }
 
   servo.moveTo(bin);
+
+  // fin du cycle
+  sorterState = "WAITING";
 }
