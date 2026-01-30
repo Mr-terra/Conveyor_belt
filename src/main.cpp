@@ -3,23 +3,17 @@
 #include "scheduler.h"
 #include "check_connect.h"
 #include "init_position.h"
-#include "production.h"
-#include "error_management.h"
-#include "sorter.h"
-#include "package_sorter.h"
-
-// Constants for stop button pin
-#define STOP_BUTTON_PIN 8
+#include "state_manager.h"
+#include "main_sorter.h"
+#include "error.h"
 
 // Global objects
-Conveyor conveyor;
-Scheduler scheduler;
-CheckConnect checkConnect;
-InitPosition initPosition;
-Production production;
-ErrorManagement errorManagement;
-Sorter sorter;
-PackageSorter packageSorter;
+extern Conveyor conveyor;
+extern Scheduler scheduler;
+extern CheckConnect checkConnect;
+extern InitPosition initPosition;
+extern StateManager stateManager;
+extern SorterController sorterController;
 
 // Global variables for states and conditions
 bool isConnectionOk = false;
@@ -27,80 +21,122 @@ bool isProductionOk = false;
 bool isStopButtonPressed = false;
 bool isCriticalError = false;
 
-void setup() {
+// Timing pour mouvement continu
+unsigned long lastMoveTime = 0;
+const unsigned long moveInterval = 135; // ms entre chaque mouvement
+
+void setup()
+{
     // Initialize serial communication
-    Serial.begin(9600);
-    Serial.println("System initialization...");
+    Serial.begin(115200);
+    M5.begin();
 
-    // Initialize stop button pin
-    pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
+    // Initialiser le système
+    conveyor.initialize(stateManager);
 
-    // Initialize all modules
-    conveyor.initialize();
+    Serial.println("🚀 System ready - Hardware monitoring active");
+    Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
+
+    // Initialize all modules with automatic state monitoring
+    // conveyor.initialize(stateManager);
     scheduler.initialize();
     checkConnect.initialize();
     initPosition.initialize();
-    production.initialize();
-    errorManagement.initialize();
-    sorter.initialize();
-    packageSorter.initialize();
+    sorterController.init(stateManager);
+
+    // Setup automatic state monitoring and callbacks
+    // setupStateMonitoring();
 
     Serial.println("System initialized. State: WAITING");
 }
 
-void loop() {
-    // Read stop button
-    isStopButtonPressed = digitalRead(STOP_BUTTON_PIN) == LOW;
+void loop()
+{
+    M5.update();
+
+    // ✨ ÉTAPE 1 : Lire l'état depuis le hardware
+    conveyor.monitorHardware();
+
+    // ✨ ÉTAPE 2 : Le StateManager détecte les changements et applique les rules
+    stateManager.monitorAllStates();
+
+    // Contrôle utilisateur
+    if (M5.BtnA.wasPressed())
+    {
+        conveyor.start();
+    }
+    if (M5.BtnB.wasPressed())
+    {
+        conveyor.stop();
+    }
+    if (M5.BtnC.wasPressed())
+    {
+        Serial.print("Current state (from hardware): ");
+        Serial.println(conveyor.getState());
+    }
+
+    // Mouvement continu si en marche
+    if (conveyor.getState() == CONVEYOR_STATE_RUNNING)
+    {
+        if (millis() - lastMoveTime >= moveInterval)
+        {
+            conveyor.move(true);
+            lastMoveTime = millis();
+        }
+    }
+
+    delay(10);
+
+    // Automatic state monitoring - detects all state changes and applies rules
+    stateManager.monitorAllStates();
 
     // State management by the scheduler
     String currentState = scheduler.getState();
 
-    if (currentState == "WAITING") {
+    if (currentState == "WAITING")
+    {
         // Waiting for trigger
-        if (!isStopButtonPressed) {
+        if (!isStopButtonPressed)
+        {
             scheduler.triggerCheckConnect();
         }
-    } else if (currentState == "CHECK_CONNECT") {
+    }
+    else if (currentState == "CHECK_CONNECT")
+    {
         // Check connections
         isConnectionOk = checkConnect.checkConnections();
-        if (isConnectionOk) {
+        if (isConnectionOk)
+        {
             scheduler.triggerInitPositions();
-        } else {
-            errorManagement.triggerError("Connection error");
         }
-    } else if (currentState == "INIT_POSITIONS") {
+        else
+        {
+            // Error will be detected automatically through state monitoring
+            // The system will detect that we're stuck in CHECK_CONNECT state
+        }
+    }
+    else if (currentState == "INIT_POSITIONS")
+    {
         // Initialize positions
         isProductionOk = initPosition.initializePositions();
-        if (isProductionOk) {
+        if (isProductionOk)
+        {
             scheduler.triggerProduction();
-        } else {
-            errorManagement.triggerError("Initialization error");
         }
-    } else if (currentState == "PRODUCTION") {
-        // Production cycle
-        if (isStopButtonPressed || isCriticalError) {
-            production.stopProduction();
-            scheduler.triggerStop();
-        } else {
-            production.startProduction();
-            // Read packages and sort
-            String packageInfo = production.readPackage();
-            if (!packageInfo.isEmpty()) {
-                packageSorter.sortPackage(packageInfo);
-            }
+        else
+        {
+            // Error will be detected automatically through state monitoring
+            // The system will detect that we're stuck in INIT_POSITIONS state
         }
+    }
+    else if (currentState == "PRODUCTION")
+    {
+        conveyor.move();
+        sorterController.production();
     }
 
-    // Error management
-    if (errorManagement.isErrorDetected()) {
-        isCriticalError = errorManagement.classifyError();
-        if (isCriticalError) {
-            errorManagement.safetyMeasures();
-            scheduler.triggerStop();
-        } else {
-            errorManagement.autoRecovery();
-        }
-    }
+    // Error management is now automatic through state monitoring
+    // The StateManager will automatically execute safety measures for critical errors
 
     // Delay to avoid overload
     delay(100);

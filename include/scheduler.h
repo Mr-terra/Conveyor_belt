@@ -3,6 +3,12 @@
 
 #include <Arduino.h>
 
+// State constants for scheduler
+extern const String STATE_WAITING;
+extern const String STATE_CHECK_CONNECT;
+extern const String STATE_INIT_POSITIONS;
+extern const String STATE_PRODUCTION;
+
 class Scheduler {
 public:
     void initialize();
@@ -12,6 +18,12 @@ public:
     void triggerInitPositions();
     void triggerProduction();
     void triggerStop();
+    
+    // State conversion function for automatic monitoring
+    static String stateToString(String state);
+
+private:
+    String _current_state;
 };
 
 #endif
