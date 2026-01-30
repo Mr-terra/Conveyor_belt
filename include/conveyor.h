@@ -29,10 +29,10 @@ public:
     // ✨ FONCTIONS CLÉS pour monitoring automatique
     String readHardwareState();     // Lit l'état depuis le module GRBL
     void monitorHardware();         // À appeler dans loop()
+    void configureStateMonitoring(StateManager& stateManager);
     
     static String stateToString(String state);
     static void setupStateRules(StateManager& stateManager);
-    static void configureStateMonitoring(StateManager& stateManager, String* stateVariable);
 
 private:
     int _movement;
@@ -40,6 +40,7 @@ private:
     Module_GRBL _grbl;
     uint8_t _i2cAddress;
     bool _isRunning;
+    String _currentState;
 };
 
 // // readStatus() retourne une String commençant par:

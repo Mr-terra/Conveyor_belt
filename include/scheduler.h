@@ -21,6 +21,9 @@ public:
     
     // State conversion function for automatic monitoring
     static String stateToString(String state);
+
+private:
+    String _current_state;
 };
 
 #endif

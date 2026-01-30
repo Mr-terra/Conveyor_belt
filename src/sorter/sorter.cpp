@@ -19,20 +19,17 @@ String Sorter::stateToString(String state) {
     return "UNKNOWN";
 }
 
-// External state variable (defined in main.cpp)
-extern String sorterState;
-
 void Sorter::initialize() {
     // Initialize sorter pin
     pinMode(SORTER_PIN, OUTPUT);
     
-    sorterState = SORTER_STATE_INITIAL;
+    _current_state = SORTER_STATE_INITIAL;
     digitalWrite(SORTER_PIN, LOW);
     Serial.println("Sorter initialized. State: INITIAL");
 }
 
 void Sorter::moveTo(String direction) {
-    sorterState = SORTER_STATE_MOVING;
+    _current_state = SORTER_STATE_MOVING;
     // Simulation of movement
     Serial.print("Moving sorter to ");
     Serial.println(direction);
@@ -40,17 +37,17 @@ void Sorter::moveTo(String direction) {
 }
 
 void Sorter::stop() {
-    sorterState = SORTER_STATE_INITIAL;
+    _current_state = SORTER_STATE_INITIAL;
     digitalWrite(SORTER_PIN, LOW);
     Serial.println("Sorter stopped");
 }
 
 String Sorter::getState() {
-    return sorterState;
+    return _current_state;
 }
 
 void Sorter::setState(String state) {
-    sorterState = state;
+    _current_state = state;
     if (state == SORTER_STATE_MOVING) {
         // Here you would add the actual code to start moving the sorter
     } else {
