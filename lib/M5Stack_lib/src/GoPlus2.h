@@ -36,18 +36,16 @@
 
 #define HUB_WIRE 0x60  // HUB DIGITAL_OUTPUT register
 
-#define HUB_READ_O_DIGITAL \
-    0x70  // HUB DIGITAL_INPUT2(the 'O' pin) register,pull_up
+#define HUB_READ_O_DIGITAL 0x70  // HUB DIGITAL_INPUT2(the 'O' pin) register,pull_up
 
 #define HUB1_R_O_ADDR 0x00
 #define HUB2_R_O_ADDR 0x01
 #define HUB3_R_O_ADDR 0x02
 
-#define HUB_IO_SET \
-    0x80  // HUB SET INPUT(1) OR OUTPUT(0) mode (OUTPUT by default)
+#define HUB_IO_SET 0x80  // HUB SET INPUT(1) OR OUTPUT(0) mode (OUTPUT by default)
 
 class GoPlus2 {
-   public:
+public:
     GoPlus2();
     void begin();
 
