@@ -2,6 +2,8 @@
 #include "sorter.h"
 #include <Arduino.h>
 
+PackageSorter packageSorter;
+
 // External sorter object
 extern Sorter sorter;
 

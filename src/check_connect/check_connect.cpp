@@ -1,6 +1,8 @@
 #include "check_connect.h"
 #include <Arduino.h>
 
+CheckConnect checkConnect;
+
 void CheckConnect::initialize() {
     Serial.println("CheckConnect initialized");
 }
