@@ -4,8 +4,11 @@
 
 static GoPlus2 goPlus;
 
+int init_angle = 90;
+
 String ServoSorter::stateToString(String s)
 {
+    goPlus.Servo_write_angle(SERVO_NUM0, init_angle);
     return s;
 }
 
