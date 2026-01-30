@@ -1,4 +1,3 @@
-
 #include "state_manager.h"
 #include "error.h"
 
@@ -29,27 +28,25 @@ void StateManager::checkStateRules(String module, String fromState, String toSta
 
 void StateManager::monitorAllStates() {
     unsigned long currentTime = millis();
-    
     for (StateMonitor& monitor : stateMonitors) {
-        // Get current state using the stored function pointer
-        String (*stateToStringFunc)(void*) = monitor.stateToString;
-        String currentState;
-        
-        // Safe type handling - no direct object dependencies
+        // 1. Lire l'état actuel via le pointeur
         String* statePtr = static_cast<String*>(monitor.stateVariable);
-        currentState = stateToStringFunc(statePtr);
+        String currentState = monitor.stateToString(statePtr);
         
+        // 2. Comparer avec l'état précédent
         if (currentState != monitor.previousState) {
-            Serial.print("State change detected: ");
+            // 3. CHANGEMENT DÉTECTÉ !
+            Serial.print("🔄 State change detected: ");
             Serial.print(monitor.moduleName);
             Serial.print(" from ");
             Serial.print(monitor.previousState);
             Serial.print(" to ");
             Serial.println(currentState);
             
-            // Check both state rules and forbidden transitions
+            // 4. Vérifier les règles
             checkStateRules(monitor.moduleName, monitor.previousState, currentState);
             
+            // 5. Mettre à jour l'état précédent
             monitor.previousState = currentState;
             monitor.lastChangeTime = currentTime;
             monitor.isStuckWarningGiven = false;

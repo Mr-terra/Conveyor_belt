@@ -18,22 +18,19 @@ String Scheduler::stateToString(String state) {
     return "UNKNOWN";
 }
 
-// External state variable (defined in main.cpp)
-extern String schedulerState;
-
 void Scheduler::initialize() {
-    schedulerState = STATE_WAITING;
+    _current_state = STATE_WAITING;
     Serial.println("Scheduler initialized. State: WAITING");
 }
 
 void Scheduler::setState(String state) {
-    schedulerState = state;
+    _current_state = state;
     Serial.print("Scheduler state changed to: ");
     Serial.println(state);
 }
 
 String Scheduler::getState() {
-    return schedulerState;
+    return _current_state;
 }
 
 void Scheduler::triggerCheckConnect() {

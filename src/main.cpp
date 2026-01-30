@@ -25,11 +25,6 @@ bool isProductionOk = false;
 bool isStopButtonPressed = false;
 bool isCriticalError = false;
 
-// Global state variables for automatic monitoring
-String conveyorState = CONVEYOR_STATE_STOPPED;
-String sorterState = SORTER_STATE_INITIAL;
-String schedulerState = STATE_WAITING;
-
 // Timing pour mouvement continu
 unsigned long lastMoveTime = 0;
 const unsigned long moveInterval = 135; // ms entre chaque mouvement
@@ -78,11 +73,11 @@ void loop() {
     }
     if (M5.BtnC.wasPressed()) {
         Serial.print("Current state (from hardware): ");
-        Serial.println(conveyorState);
+        Serial.println(conveyor.getState());
     }
     
     // Mouvement continu si en marche
-    if (conveyorState == CONVEYOR_STATE_RUNNING) {
+    if (conveyor.getState() == CONVEYOR_STATE_RUNNING) {
         if (millis() - lastMoveTime >= moveInterval) {
             conveyor.move(true);
             lastMoveTime = millis();
@@ -90,11 +85,6 @@ void loop() {
     }
     
     delay(10);
-
-    // Update global state variables for automatic monitoring
-    conveyorState = conveyor.getState();
-    sorterState = sorter.getState();
-    schedulerState = scheduler.getState();
 
     // Automatic state monitoring - detects all state changes and applies rules
     stateManager.monitorAllStates();

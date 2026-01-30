@@ -3,7 +3,6 @@
 #include "error.h"
 
 Conveyor conveyor(1, 1000);
-extern String conveyorState;
 
 // États basés sur les états réels du module GRBL
 const String CONVEYOR_STATE_STOPPED = "STOPPED";    // 'I' (Idle)
@@ -35,8 +34,8 @@ void Conveyor::setupStateRules(StateManager& stateManager) {
     stateManager.addStateRule("Conveyor", "ALARM", "STOPPED", ERROR_WARNING, "Recovered from alarm - unlocked");
 }
 
-void Conveyor::configureStateMonitoring(StateManager& stateManager, String* stateVariable) {
-    stateManager.observeState(stateVariable, "Conveyor", Conveyor::stateToString);
+void Conveyor::configureStateMonitoring(StateManager& stateManager) {
+    stateManager.observeState(&_currentState, "Conveyor", Conveyor::stateToString);
     setupStateRules(stateManager);
 }
 
@@ -66,9 +65,9 @@ void Conveyor::initialize(StateManager& stateManager) {
     
     Serial.println("✅ Conveyor initialized with Module GRBL 13.2");
     Serial.print("📊 Initial state: ");
-    Serial.println(conveyorState);
+    Serial.println(_currentState);
     
-    configureStateMonitoring(stateManager, &conveyorState);
+    configureStateMonitoring(stateManager);
 }
 
 // ✨ CŒUR DU SYSTÈME : Lecture de l'état depuis le hardware
@@ -104,7 +103,7 @@ String Conveyor::readHardwareState() {
         }
         
         // Debug: afficher le code brut
-        if (newState != conveyorState) {
+        if (newState != _currentState) {
             Serial.print("📡 Raw status: '");
             Serial.print(stateChar);
             Serial.print("' (");
@@ -123,13 +122,13 @@ String Conveyor::readHardwareState() {
     }
     
     // === MISE À JOUR DE L'ÉTAT (automatique) ===
-    if (newState != conveyorState) {
+    if (newState != _currentState) {
         Serial.print("🔄 Hardware state change: ");
-        Serial.print(conveyorState);
+        Serial.print(_currentState);
         Serial.print(" → ");
         Serial.println(newState);
         
-        conveyorState = newState; // ← Seul endroit où on change l'état
+        _currentState = newState; // ← Seul endroit où on change l'état
         // Le StateManager détectera ce changement automatiquement
     }
     
@@ -188,7 +187,7 @@ void Conveyor::monitorHardware() {
         // ↑ C'est TOUT ! Les rules du StateManager gèrent le reste
         
         // Réinitialiser le flag _isRunning si le moteur est arrêté
-        if (conveyorState == CONVEYOR_STATE_STOPPED) {
+        if (_currentState == CONVEYOR_STATE_STOPPED) {
             _isRunning = false;
         }
         
@@ -238,7 +237,7 @@ void Conveyor::setMovement(int steps) {
 }
 
 String Conveyor::getState() const {
-    return conveyorState;
+    return _currentState;
 }
 
 void Conveyor::setState(String state) {
