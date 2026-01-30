@@ -3,10 +3,8 @@
 #include "scheduler.h"
 #include "check_connect.h"
 #include "init_position.h"
-#include "production.h"
 #include "state_manager.h"
-#include "sorter.h"
-#include "package_sorter.h"
+#include "main_sorter.h"
 #include "error.h"
 
 // Global objects
@@ -14,10 +12,8 @@ extern Conveyor conveyor;
 extern Scheduler scheduler;
 extern CheckConnect checkConnect;
 extern InitPosition initPosition;
-extern Production production;
 extern StateManager stateManager;
-extern Sorter sorter;
-extern PackageSorter packageSorter;
+extern SorterController sorterController;
 
 // Global variables for states and conditions
 bool isConnectionOk = false;
@@ -46,9 +42,7 @@ void setup()
     scheduler.initialize();
     checkConnect.initialize();
     initPosition.initialize();
-    production.initialize();
-    sorter.initialize();
-    packageSorter.initialize();
+    sorterController.init(stateManager);
 
     // Setup automatic state monitoring and callbacks
     // setupStateMonitoring();
@@ -82,8 +76,10 @@ void loop()
     }
 
     // Mouvement continu si en marche
-    if (conveyor.getState() == CONVEYOR_STATE_RUNNING) {
-        if (millis() - lastMoveTime >= moveInterval) {
+    if (conveyor.getState() == CONVEYOR_STATE_RUNNING)
+    {
+        if (millis() - lastMoveTime >= moveInterval)
+        {
             conveyor.move(true);
             lastMoveTime = millis();
         }
@@ -135,22 +131,8 @@ void loop()
     }
     else if (currentState == "PRODUCTION")
     {
-        // Production cycle
-        if (isStopButtonPressed || isCriticalError)
-        {
-            production.stopProduction();
-            scheduler.triggerStop();
-        }
-        else
-        {
-            production.startProduction();
-            // Read packages and sort
-            String packageInfo = production.readPackage();
-            if (!packageInfo.isEmpty())
-            {
-                packageSorter.sortPackage(packageInfo);
-            }
-        }
+        conveyor.move();
+        sorterController.production();
     }
 
     // Error management is now automatic through state monitoring
