@@ -15,3 +15,5 @@ private:
     static String stateToString(String *s);
     static void setupStateRules(StateManager &stateManager);
 };
+
+extern SorterController sorterController;
