@@ -1,3 +1,11 @@
+# Run the project
+
+source venv/bin/activate
+
+make build    # compiler le projet
+make upload   # uploader sur le M5Stack
+make clean    # nettoyer les fichiers compilés
+
 # State Management Example
 
 This example demonstrates the complete architecture for automatic state monitoring and error handling with proper separation of concerns.

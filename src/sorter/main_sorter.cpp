@@ -8,12 +8,15 @@
 #include "adresser.h"
 #include "servo_sorter.h"
 #include "state_manager.h"
+#include "main_sorter.h"
 #include "error.h"
 
 static RFIDReader rfid;
 static Adresser adresser;
 static ServoSorter servo;
-static String UID;
+// static String UID;
+
+SorterController sorterController;
 
 static String sorterStateToString(String s) { return s; } // signature attendue
 
@@ -38,6 +41,21 @@ void SorterController::init(StateManager &stateManager)
   Serial.println("SorterController ready");
 }
 
+bool SorterController::checkConnection()
+{
+  // Vérifier que RFID et Servo sont connectés
+  bool rfidOk = RFIDReader::checkConnection();
+  bool servoOk = ServoSorter::checkConnection();
+  
+  if (rfidOk && servoOk) {
+    Serial.println("✅ Sorter system OK (RFID + Servo)");
+    return true;
+  } else {
+    Serial.println("❌ Sorter system failure");
+    return false;
+  }
+}
+
 void SorterController::production()
 {
   String uidRead = rfid.readUid();
@@ -51,7 +69,7 @@ void SorterController::production()
   }
 
   // carte lue
-  UID = uidRead;
+  // UID = uidRead;
   sorterState = "RFID_READ";
 
   Serial.print("UID: ");

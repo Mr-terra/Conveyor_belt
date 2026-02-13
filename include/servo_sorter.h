@@ -8,6 +8,9 @@ class ServoSorter
 public:
     void init(StateManager &stateManager);
     void moveTo(Bin::Id bin);
+    
+    // Health check - vérifie que le servo répond
+    static bool checkConnection();
 
 private:
     int angleFor(Bin::Id bin) const;

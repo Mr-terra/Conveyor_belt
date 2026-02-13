@@ -7,6 +7,9 @@ class SorterController
 public:
     void init(StateManager &sm);
     void production();
+    
+    // Health check - vérifie l'ensemble du système de tri
+    static bool checkConnection();
 
 private:
     StateManager *sm = nullptr;
@@ -15,3 +18,5 @@ private:
     static String stateToString(String *s);
     static void setupStateRules(StateManager &stateManager);
 };
+
+extern SorterController sorterController;

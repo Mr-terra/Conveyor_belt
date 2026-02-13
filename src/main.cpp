@@ -103,16 +103,18 @@ void loop()
     }
     else if (currentState == "CHECK_CONNECT")
     {
-        // Check connections
+        // ✨ Pattern standalone : toutes les méthodes sont static
         isConnectionOk = checkConnect.checkConnections();
+        
         if (isConnectionOk)
         {
             scheduler.triggerInitPositions();
         }
         else
         {
-            // Error will be detected automatically through state monitoring
-            // The system will detect that we're stuck in CHECK_CONNECT state
+            // Gestion d'erreur : retour à l'état WAITING
+            Serial.println("❌ Connection check failed - returning to WAITING");
+            scheduler.setState("WAITING");
         }
     }
     else if (currentState == "INIT_POSITIONS")

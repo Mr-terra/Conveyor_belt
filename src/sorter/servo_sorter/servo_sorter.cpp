@@ -61,3 +61,19 @@ void ServoSorter::moveTo(Bin::Id bin)
     // ici tu pourrais plus tard vérifier un retour matériel
     servoState = "IDLE";
 }
+
+bool ServoSorter::checkConnection()
+{
+    // Vérification : tester si le module GoPlus2 répond sur I2C
+    Wire.begin();
+    Wire.beginTransmission(GOPLUS_ADDR); // Adresse du GoPlus2 (0x38)
+    byte error = Wire.endTransmission();
+    
+    if (error == 0) {
+        Serial.println("✅ Servo/GoPlus2 I2C detected at 0x38");
+        return true;
+    } else {
+        Serial.printf("❌ Servo/GoPlus2 not detected at 0x38 (error: %d)\n", error);
+        return false;
+    }
+}

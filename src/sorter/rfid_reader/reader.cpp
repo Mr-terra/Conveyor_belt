@@ -46,3 +46,19 @@ String RFIDReader::readUid()
     mfrc522.PCD_StopCrypto1();
     return uid;
 }
+
+bool RFIDReader::checkConnection()
+{
+    // Vérification simple : scanner l'adresse I2C du module RFID
+    Wire.begin(21, 22);
+    Wire.beginTransmission(RFID_ADDR);
+    byte error = Wire.endTransmission();
+    
+    if (error == 0) {
+        Serial.println("✅ RFID I2C detected at 0x28");
+        return true;
+    } else {
+        Serial.printf("❌ RFID not detected at 0x28 (error: %d)\n", error);
+        return false;
+    }
+}
