@@ -2,6 +2,8 @@
 #include "state_manager.h"
 #include "error.h"
 
+#define CONVEYOR_ADDR 0x70
+
 Conveyor conveyor(1, 1000);
 
 // États basés sur les états réels du module GRBL
@@ -68,6 +70,22 @@ void Conveyor::initialize(StateManager& stateManager) {
     Serial.println(_currentState);
     
     configureStateMonitoring(stateManager);
+}
+
+bool Conveyor::checkConnection()
+{
+    // Vérification : tester la communication I2C avec le module GRBL
+    Wire.begin();
+    Wire.beginTransmission(CONVEYOR_ADDR); // Adresse par défaut du GRBL
+    byte error = Wire.endTransmission();
+    
+    if (error == 0) {
+        Serial.println("✅ GRBL Motor detected at " + String(CONVEYOR_ADDR, HEX));
+        return true;
+    } else {
+        Serial.printf("❌ GRBL Motor not detected at 0x%X (error: %d)\n", CONVEYOR_ADDR, error);
+        return false;
+    }
 }
 
 // ✨ CŒUR DU SYSTÈME : Lecture de l'état depuis le hardware

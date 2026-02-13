@@ -1,4 +1,7 @@
 #include "check_connect.h"
+#include "conveyor.h"
+#include "main_sorter.h"
+#include "reader.h"
 #include <Arduino.h>
 
 CheckConnect checkConnect;
@@ -8,35 +11,44 @@ void CheckConnect::initialize() {
 }
 
 bool CheckConnect::checkConnections() {
-    // Check all connections
+    Serial.println("\n🔍 === Checking all connections ===");
+    
+    // Check all connections via static methods
     bool dolibarrOk = checkDolibarrConnection();
     bool motorOk = checkMotorConnection();
     bool sorterOk = checkSorterConnection();
     bool rfidOk = checkRFIDConnection();
 
-    return dolibarrOk && motorOk && sorterOk && rfidOk;
+    bool allOk = dolibarrOk && motorOk && sorterOk && rfidOk;
+    
+    if (allOk) {
+        Serial.println("✅ === All connections OK ===\n");
+    } else {
+        Serial.println("❌ === Connection check FAILED ===\n");
+    }
+    
+    return allOk;
 }
 
 bool CheckConnect::checkDolibarrConnection() {
-    // Simulation of Dolibarr connection check
-    Serial.println("Checking Dolibarr connection...");
+    // TODO: Implémenter le test réseau/API Dolibarr
+    Serial.println("🌐 Checking Dolibarr connection...");
+    // Simulation pour l'instant
+    Serial.println("⚠️  Dolibarr check not implemented (assumed OK)");
     return true;
 }
 
 bool CheckConnect::checkMotorConnection() {
-    // Simulation of motor connection check
-    Serial.println("Checking Motor connection...");
-    return true;
+    Serial.println("🔧 Checking Motor connection...");
+    return Conveyor::checkConnection();
 }
 
 bool CheckConnect::checkSorterConnection() {
-    // Simulation of sorter connection check
-    Serial.println("Checking Sorter connection...");
-    return true;
+    Serial.println("📦 Checking Sorter connection...");
+    return SorterController::checkConnection();
 }
 
 bool CheckConnect::checkRFIDConnection() {
-    // Simulation of RFID connection check
-    Serial.println("Checking RFID connection...");
-    return true;
+    Serial.println("📡 Checking RFID connection...");
+    return RFIDReader::checkConnection();
 }

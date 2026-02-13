@@ -38,6 +38,21 @@ void SorterController::init(StateManager &stateManager)
   Serial.println("SorterController ready");
 }
 
+bool SorterController::checkConnection()
+{
+  // Vérifier que RFID et Servo sont connectés
+  bool rfidOk = RFIDReader::checkConnection();
+  bool servoOk = ServoSorter::checkConnection();
+  
+  if (rfidOk && servoOk) {
+    Serial.println("✅ Sorter system OK (RFID + Servo)");
+    return true;
+  } else {
+    Serial.println("❌ Sorter system failure");
+    return false;
+  }
+}
+
 void SorterController::production()
 {
   String uidRead = rfid.readUid();

@@ -7,6 +7,8 @@ class CheckConnect {
 public:
     void initialize();
     bool checkConnections();
+    
+    // Méthodes individuelles (peuvent être utilisées séparément)
     bool checkDolibarrConnection();
     bool checkMotorConnection();
     bool checkSorterConnection();
