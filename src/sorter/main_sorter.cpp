@@ -8,12 +8,15 @@
 #include "adresser.h"
 #include "servo_sorter.h"
 #include "state_manager.h"
+#include "main_sorter.h"
 #include "error.h"
 
 static RFIDReader rfid;
 static Adresser adresser;
 static ServoSorter servo;
-static String UID;
+// static String UID;
+
+SorterController sorterController;
 
 static String sorterStateToString(String s) { return s; } // signature attendue
 
@@ -66,7 +69,7 @@ void SorterController::production()
   }
 
   // carte lue
-  UID = uidRead;
+  // UID = uidRead;
   sorterState = "RFID_READ";
 
   Serial.print("UID: ");
