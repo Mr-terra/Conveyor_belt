@@ -5,11 +5,11 @@
 class SorterController
 {
 public:
-    void init(StateManager &sm);
+    void initialize(StateManager &sm);
     void production();
     
     // Health check - vérifie l'ensemble du système de tri
-    static bool checkConnection();
+    bool checkConnection();
 
 private:
     StateManager *sm = nullptr;

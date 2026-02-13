@@ -71,10 +71,10 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty,
     return performPOST(url, body);
 }
 
-String DolibarrAPI::pingDolibarr()
+boolean DolibarrAPI::checkConnection()
 {
     String url = baseUrl + "/users/info";
-    return performGET(url);
+    return performGET(url).length() > 0;
 }
 
 String DolibarrAPI::checkWarehouse(int warehouseId)

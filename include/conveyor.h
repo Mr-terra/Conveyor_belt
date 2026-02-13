@@ -21,7 +21,7 @@ public:
     void move(bool forward = true);
     
     // Health check - vérifie la communication I2C avec le module GRBL
-    static bool checkConnection();
+    bool checkConnection();
     
     String getState() const;
     void setState(String state);  // DEPRECATED - ne pas utiliser
