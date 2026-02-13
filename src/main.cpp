@@ -6,6 +6,7 @@
 #include "state_manager.h"
 #include "main_sorter.h"
 #include "error.h"
+#include "dolibarr_api.h"
 
 // Global objects
 extern Conveyor conveyor;
@@ -14,6 +15,13 @@ extern CheckConnect checkConnect;
 extern InitPosition initPosition;
 extern StateManager stateManager;
 extern SorterController sorterController;
+
+// Configuration Dolibarr (à adapter selon votre environnement)
+// Remplacez par l'URL et la clé API de votre instance Dolibarr
+const String DOLIBARR_URL = "http://votre-serveur-dolibarr.com/api/index.php";
+const String DOLIBARR_API_KEY = "votre-cle-api-dolibarr";
+
+DolibarrAPI dolibarrApi(DOLIBARR_URL, DOLIBARR_API_KEY);
 
 // Global variables for states and conditions
 bool isConnectionOk = false;
@@ -33,6 +41,7 @@ void setup()
 
     // Initialiser le système
     conveyor.initialize(stateManager);
+    sorterController.initialize(stateManager);
 
     Serial.println("🚀 System ready - Hardware monitoring active");
     Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
@@ -40,9 +49,13 @@ void setup()
     // Initialize all modules with automatic state monitoring
     // conveyor.initialize(stateManager);
     scheduler.initialize();
-    checkConnect.initialize();
+    
+    // Configuration OBLIGATOIRE des dépendances pour CheckConnect
+    // Doit être fait avant tout appel à checkConnections()
+    checkConnect.setDolibarrAPI(&dolibarrApi);
+    checkConnect.setConveyor(&conveyor);
+    checkConnect.setSorterController(&sorterController);
     initPosition.initialize();
-    sorterController.init(stateManager);
 
     // Setup automatic state monitoring and callbacks
     // setupStateMonitoring();
