@@ -27,7 +27,7 @@ void SorterController::setupStateRules(StateManager &stateManager)
   stateManager.addStateRule("SORTER", "WAITING", "RFID_READING_ERROR", ERROR_WARNING, "COULDN'T READ THE PACKAGE");
 }
 
-void SorterController::init(StateManager &stateManager)
+void SorterController::initialize(StateManager &stateManager)
 {
   rfid.init();
   servo.init(stateManager);
