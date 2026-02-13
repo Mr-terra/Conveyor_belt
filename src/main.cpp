@@ -27,9 +27,14 @@ const unsigned long moveInterval = 135; // ms entre chaque mouvement
 
 void setup()
 {
+
     // Initialize serial communication
     Serial.begin(115200);
     M5.begin();
+
+    // I2C M5Stack (Core / grey) : SDA=21, SCL=22
+    Wire.begin(21, 22);
+    Wire.setClock(400000);
 
     // Initialiser le système
     conveyor.initialize(stateManager);
@@ -105,7 +110,7 @@ void loop()
     {
         // ✨ Pattern standalone : toutes les méthodes sont static
         isConnectionOk = checkConnect.checkConnections();
-        
+
         if (isConnectionOk)
         {
             scheduler.triggerInitPositions();

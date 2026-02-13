@@ -7,9 +7,11 @@ class SorterController
 public:
     void init(StateManager &sm);
     void production();
-    
+
     // Health check - vérifie l'ensemble du système de tri
     static bool checkConnection();
+
+    void setState(const char *newState);
 
 private:
     StateManager *sm = nullptr;
