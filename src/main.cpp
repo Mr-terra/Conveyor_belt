@@ -29,6 +29,7 @@ bool isStopButtonPressed = false;
 void setup()
 {
 
+
     // Initialize serial communication
     Serial.begin(115200);
     M5.begin();

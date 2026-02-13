@@ -13,6 +13,8 @@ public:
 
     void setState(const char *newState);
 
+    void setState(const char *newState);
+
 private:
     StateManager *sm = nullptr;
     String sorterState = "INIT_PRODUCTION";
