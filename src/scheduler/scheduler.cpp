@@ -126,9 +126,9 @@ void Scheduler::executeCurrentState() {
         }
     }
     else if (_current_state == STATE_PRODUCTION) {
-        // if (_conveyor != nullptr) {
-        //     _conveyor->move(true); // Mouvement continu
-        // }
+        if (_conveyor != nullptr) {
+            _conveyor->move(true); // Mouvement continu
+        }
         if (_sorterController != nullptr) {
             _sorterController->production();
         }
