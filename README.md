@@ -67,9 +67,13 @@ pio run -t monitor -e m5stack-grey
 pio run -e m5stack-grey -t clean
 ```
 
+## If u want to expose port 80
+
+```bash
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress={{WSL_PORT}} connectport=80
+```
+
 #########################################################################
-
-
 
 # State Management Example
 

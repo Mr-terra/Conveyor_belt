@@ -44,19 +44,13 @@ String DolibarrAPI::performPOST(String url, String body)
     return response;
 }
 
-String DolibarrAPI::getProductByRef(String ref)
+String DolibarrAPI::getProductByBarcode(String barcode)
 {
-    String url = baseUrl + "/products?sqlfilters=(ref:=:" + ref + ")";
+    String url = baseUrl + "/products?sqlfilters=(barcode:=:" + barcode + ")";
     return performGET(url);
 }
 
-String DolibarrAPI::getProductStock(int productId)
-{
-    String url = baseUrl + "/products/" + String(productId) + "/stock";
-    return performGET(url);
-}
-
-String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty, String movementType)
+String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
 {
     String url = baseUrl + "/stockmovements";
 
@@ -64,8 +58,6 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty,
     body += "\"product_id\":" + String(productId) + ",";
     body += "\"warehouse_id\":" + String(warehouseId) + ",";
     body += "\"qty\":" + String(qty) + ",";
-    body += "\"movement_type\":\"" + movementType + "\",";
-    body += "\"label\":\"RFID Conveyor\"";
     body += "}";
 
     return performPOST(url, body);
