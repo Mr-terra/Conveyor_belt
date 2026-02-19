@@ -31,41 +31,45 @@ String Scheduler::stateToString(String state)
 }
 
 // Pointeurs vers les dépendances
-static CheckConnect* _checkConnect = nullptr;
-static InitPosition* _initPosition = nullptr;
-static SorterController* _sorterController = nullptr;
-static Conveyor* _conveyor = nullptr;
+static CheckConnect *_checkConnect = nullptr;
+static InitPosition *_initPosition = nullptr;
+static SorterController *_sorterController = nullptr;
+static Conveyor *_conveyor = nullptr;
 
-void Scheduler::initialize() {
+void Scheduler::initialize()
+{
     _current_state = STATE_WAITING;
     Serial.println("Scheduler initialized. State: WAITING");
 }
 
 void Scheduler::setDependencies(
-    CheckConnect* checkConnect,
-    InitPosition* initPosition,
-    SorterController* sorterController,
-    Conveyor* conveyor
-) {
+    CheckConnect *checkConnect,
+    InitPosition *initPosition,
+    SorterController *sorterController,
+    Conveyor *conveyor)
+{
     _checkConnect = checkConnect;
     _initPosition = initPosition;
     _sorterController = sorterController;
     _conveyor = conveyor;
 }
 
-void Scheduler::setState(String state) {
+void Scheduler::setState(String state)
+{
     _current_state = state;
     Serial.print("Scheduler state changed to: ");
     Serial.println(state);
 }
 
-String Scheduler::getState() {
+String Scheduler::getState()
+{
     return _current_state;
 }
 
 void Scheduler::triggerCheckConnect()
 {
-    if (_checkConnect == nullptr) {
+    if (_checkConnect == nullptr)
+    {
         Serial.println("❌ Cannot trigger CHECK_CONNECT: CheckConnect not configured");
         setState(STATE_ERROR);
         return;
@@ -75,7 +79,8 @@ void Scheduler::triggerCheckConnect()
 
 void Scheduler::triggerInitPositions()
 {
-    if (_initPosition == nullptr) {
+    if (_initPosition == nullptr)
+    {
         Serial.println("❌ Cannot trigger INIT_POSITIONS: InitPosition not configured");
         setState(STATE_ERROR);
         return;
@@ -85,7 +90,8 @@ void Scheduler::triggerInitPositions()
 
 void Scheduler::triggerProduction()
 {
-    if (_sorterController == nullptr || _conveyor == nullptr) {
+    if (_sorterController == nullptr || _conveyor == nullptr)
+    {
         Serial.println("❌ Cannot trigger PRODUCTION: Dependencies not configured");
         setState(STATE_ERROR);
         return;
@@ -96,40 +102,56 @@ void Scheduler::triggerProduction()
 void Scheduler::triggerStop()
 {
     setState(STATE_WAITING);
-    if (_conveyor != nullptr) {
+    if (_conveyor != nullptr)
+    {
         _conveyor->stop();
     }
 }
 
 // Méthode principale pour exécuter la logique de l'état courant
-void Scheduler::executeCurrentState() {
-    if (_current_state == STATE_CHECK_CONNECT) {
-        if (_checkConnect != nullptr) {
+void Scheduler::executeCurrentState()
+{
+    if (_current_state == STATE_CHECK_CONNECT)
+    {
+        if (_checkConnect != nullptr)
+        {
             bool connectionsOk = _checkConnect->checkConnections();
-            if (connectionsOk) {
+            if (connectionsOk)
+            {
                 triggerInitPositions();
-            } else {
+            }
+            else
+            {
                 Serial.println("❌ Connection check failed - returning to WAITING");
                 triggerStop();
             }
         }
     }
-    else if (_current_state == STATE_INIT_POSITIONS) {
-        if (_initPosition != nullptr) {
+    else if (_current_state == STATE_INIT_POSITIONS)
+    {
+        if (_initPosition != nullptr)
+        {
             bool initOk = _initPosition->initializePositions();
-            if (initOk) {
+            if (initOk)
+            {
                 triggerProduction();
-            } else {
+            }
+            else
+            {
                 Serial.println("❌ Position initialization failed - returning to WAITING");
                 triggerStop();
             }
         }
     }
-    else if (_current_state == STATE_PRODUCTION) {
-        if (_conveyor != nullptr) {
+    else if (_current_state == STATE_PRODUCTION)
+    {
+        if (_conveyor != nullptr)
+        {
+            _conveyor->start();
             _conveyor->move(true); // Mouvement continu
         }
-        if (_sorterController != nullptr) {
+        if (_sorterController != nullptr)
+        {
             _sorterController->production();
         }
     }

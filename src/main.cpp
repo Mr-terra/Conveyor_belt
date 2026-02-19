@@ -28,9 +28,24 @@ bool isStopButtonPressed = false;
 
 void setup()
 {
+
     // Initialize serial communication
     Serial.begin(115200);
     M5.begin();
+
+    // I2C M5Stack (Core / grey) : SDA=21, SCL=22
+    Wire.begin(21, 22);
+    Wire.setClock(400000);
+
+    for (uint8_t addr = 1; addr < 127; addr++)
+    {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0)
+        {
+            Serial.print("I2C device found at 0x");
+            Serial.println(addr, HEX);
+        }
+    }
 
     // Initialiser le système
     conveyor.initialize(stateManager);
@@ -40,21 +55,20 @@ void setup()
 
     // Initialize all modules with automatic state monitoring
     scheduler.initialize();
-    
+
     // Configuration OBLIGATOIRE des dépendances pour CheckConnect
     // Doit être fait avant tout appel à checkConnections()
     checkConnect.setDolibarrAPI(&dolibarrApi);
     checkConnect.setConveyor(&conveyor);
     checkConnect.setSorterController(&sorterController);
-    
+
     // Configuration des dépendances pour le Scheduler
     scheduler.setDependencies(
         &checkConnect,
         &initPosition,
         &sorterController,
-        &conveyor
-    );
-    
+        &conveyor);
+
     initPosition.initialize();
 
     // Setup automatic state monitoring and callbacks

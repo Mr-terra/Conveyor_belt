@@ -4,7 +4,8 @@
 StateManager stateManager;
 
 // Physical state verification structure
-struct PhysicalCheck {
+struct PhysicalCheck
+{
     String module;
     String state;
     bool (*checkFunction)();
@@ -12,29 +13,36 @@ struct PhysicalCheck {
     ErrorLevel level;
 };
 
-void StateManager::addStateRule(String module, String fromState, String toState, ErrorLevel level, String message) {
+void StateManager::addStateRule(String module, String fromState, String toState, ErrorLevel level, String message)
+{
     stateRules.push_back({module, fromState, toState, level, message});
 }
 
-void StateManager::checkStateRules(String module, String fromState, String toState) {
-    for (const StateRule& rule : stateRules) {
+void StateManager::checkStateRules(String module, String fromState, String toState)
+{
+    for (const StateRule &rule : stateRules)
+    {
         if (rule.module == module &&
             (rule.fromState == fromState || rule.fromState == "*") &&
-            (rule.toState == toState || rule.toState == "*")) {
+            (rule.toState == toState || rule.toState == "*"))
+        {
             Error::triggerError(rule.message, rule.level, module);
         }
     }
 }
 
-void StateManager::monitorAllStates() {
+void StateManager::monitorAllStates()
+{
     unsigned long currentTime = millis();
-    for (StateMonitor& monitor : stateMonitors) {
+    for (StateMonitor &monitor : stateMonitors)
+    {
         // 1. Lire l'état actuel via le pointeur
-        String* statePtr = static_cast<String*>(monitor.stateVariable);
+        String *statePtr = static_cast<String *>(monitor.stateVariable);
         String currentState = monitor.stateToString(statePtr);
-        
+
         // 2. Comparer avec l'état précédent
-        if (currentState != monitor.previousState) {
+        if (currentState != monitor.previousState)
+        {
             // 3. CHANGEMENT DÉTECTÉ !
             Serial.print("🔄 State change detected: ");
             Serial.print(monitor.moduleName);
@@ -42,21 +50,25 @@ void StateManager::monitorAllStates() {
             Serial.print(monitor.previousState);
             Serial.print(" to ");
             Serial.println(currentState);
-            
+
             // 4. Vérifier les règles
             checkStateRules(monitor.moduleName, monitor.previousState, currentState);
-            
+
             // 5. Mettre à jour l'état précédent
             monitor.previousState = currentState;
             monitor.lastChangeTime = currentTime;
             monitor.isStuckWarningGiven = false;
-        } else {
+        }
+        else
+        {
             // Check for stuck states
-            if (!monitor.isStuckWarningGiven && 
-                currentTime - monitor.lastChangeTime > stuckStateTimeout) {
-                
+            if (!monitor.isStuckWarningGiven &&
+                currentTime - monitor.lastChangeTime > stuckStateTimeout)
+            {
+
                 // Only warn about non-terminal states
-                if (currentState != "WAITING" && currentState != "STOPPED" && currentState != "INITIAL") {
+                if (currentState != "WAITING" && currentState != "STOPPED" && currentState != "INITIAL")
+                {
                     String errorMessage = String(monitor.moduleName) + " stuck in state: " + currentState;
                     Error::triggerError(errorMessage, ERROR_WARNING, monitor.moduleName);
                     monitor.isStuckWarningGiven = true;
