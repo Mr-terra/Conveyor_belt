@@ -37,6 +37,7 @@ void setup()
 
     // Initialiser le système
     conveyor.initialize(stateManager);
+    sorterController.initialize(stateManager);
 
     Serial.println("🚀 System ready - Hardware monitoring active");
     Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
