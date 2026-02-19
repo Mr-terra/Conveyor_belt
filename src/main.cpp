@@ -109,14 +109,12 @@ void loop()
     if (M5.BtnA.wasPressed())
     {
         Serial.println("🔄 Bouton A pressed - Forward");
-        conveyor.start(); // S'assurer que le convoyeur est démarré
         conveyor.move(true);
         updateDisplay();
     }
     else if (M5.BtnC.wasPressed())
     {
         Serial.println("🔄 Bouton C pressed - Backward");
-        conveyor.start(); // S'assurer que le convoyeur est démarré
         conveyor.move(false);
         updateDisplay();
     }
@@ -136,9 +134,6 @@ void loop()
     // Exécution de la logique de l'état courant via le scheduler
     // C'est le scheduler qui gère maintenant tout le flux de travail
     scheduler.executeCurrentState();
-
-    delay(100);
-
     // Error management is now automatic through state monitoring
     // The StateManager will automatically execute safety measures for critical errors
 

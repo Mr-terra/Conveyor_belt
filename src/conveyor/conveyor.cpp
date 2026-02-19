@@ -231,8 +231,7 @@ void Conveyor::move(bool forward)
 {
     if (!_isRunning)
     {
-        Serial.println("⚠️ Conveyor not running, call start() first");
-        return;
+        this->start(); // Démarrer le moteur si ce n'est pas déjà fait
     }
 
     // Augmentez la valeur de _movement pour un mouvement visible
