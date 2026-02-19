@@ -33,20 +33,6 @@ void setup()
     Serial.begin(115200);
     M5.begin();
 
-    // I2C M5Stack (Core / grey) : SDA=21, SCL=22
-    Wire.begin(21, 22);
-    Wire.setClock(400000);
-
-    for (uint8_t addr = 1; addr < 127; addr++)
-    {
-        Wire.beginTransmission(addr);
-        if (Wire.endTransmission() == 0)
-        {
-            Serial.print("I2C device found at 0x");
-            Serial.println(addr, HEX);
-        }
-    }
-
     // Initialiser le système
     conveyor.initialize(stateManager);
 
@@ -74,7 +60,36 @@ void setup()
     // Setup automatic state monitoring and callbacks
     // setupStateMonitoring();
 
+    // Démarrer le convoyeur UNE SEULE FOIS
+    // conveyor.start();
+
+    // Affichage initial
+    M5.Lcd.clear();
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(10, 10);
+    M5.Lcd.println("Conveyor Control");
+    M5.Lcd.setCursor(10, 40);
+    M5.Lcd.println("A: Forward  C: Backward");
+    M5.Lcd.setCursor(10, 70);
+    M5.Lcd.println("B: Toggle Mode");
+    M5.Lcd.setCursor(10, 100);
+    M5.Lcd.print("Mode: ");
+    M5.Lcd.println(scheduler.getState());
+
+    // Démarrer en mode WAITING
+    scheduler.triggerStop();
+
     Serial.println("System initialized. State: WAITING");
+}
+
+void updateDisplay() {
+    M5.Lcd.setCursor(10, 100);
+    M5.Lcd.print("Mode: ");
+    M5.Lcd.println(scheduler.getState());
+
+    M5.Lcd.setCursor(10, 130);
+    M5.Lcd.print("State: ");
+    M5.Lcd.println(conveyor.getState());
 }
 
 void loop()
@@ -87,30 +102,28 @@ void loop()
     // ✨ ÉTAPE 2 : Le StateManager détecte les changements et applique les rules
     stateManager.monitorAllStates();
 
-    // Contrôle utilisateur
-    if (M5.BtnA.wasPressed())
-    {
-        // Bouton A: Démarrer le processus automatique
-        String currentState = scheduler.getState();
-        if (currentState == "WAITING")
-        {
-            scheduler.triggerCheckConnect();
+    // Gestion des boutons
+    if (M5.BtnA.wasPressed()) {
+        Serial.println("🔄 Bouton A pressed - Forward");
+        conveyor.start();  // S'assurer que le convoyeur est démarré
+        conveyor.move(true);
+        updateDisplay();
+    }
+    else if (M5.BtnC.wasPressed()) {
+        Serial.println("🔄 Bouton C pressed - Backward");
+        conveyor.start();  // S'assurer que le convoyeur est démarré
+        conveyor.move(false);
+        updateDisplay();
+    }
+    else if (M5.BtnB.wasPressed()) {
+        Serial.println("🔄 Bouton B pressed - Toggle Mode");
+        if (scheduler.getState() == "WAITING") {
+            scheduler.triggerProduction();
+        } else {
+            scheduler.triggerStop();
         }
+        updateDisplay();
     }
-    if (M5.BtnB.wasPressed())
-    {
-        // Bouton B: Arrêter et retourner à l'état initial
-        scheduler.triggerStop();
-    }
-    if (M5.BtnC.wasPressed())
-    {
-        // Bouton C: Afficher l'état courant
-        Serial.print("Current scheduler state: ");
-        Serial.println(scheduler.getState());
-        Serial.print("Conveyor state: ");
-        Serial.println(conveyor.getState());
-    }
-
     // Exécution de la logique de l'état courant via le scheduler
     // C'est le scheduler qui gère maintenant tout le flux de travail
     scheduler.executeCurrentState();
