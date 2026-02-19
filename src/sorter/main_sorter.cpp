@@ -88,7 +88,6 @@ void SorterController::production()
     setState("RFID_READING_ERROR");
     Serial.println("Unknown UID");
     setState("WAITING");
-    return;
   }
 
   servo.moveTo(bin);

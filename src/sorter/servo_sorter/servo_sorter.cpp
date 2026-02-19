@@ -4,7 +4,7 @@
 
 static GoPlus2 goPlus;
 
-int init_angle = 90;
+int init_angle = 30;
 
 String ServoSorter::stateToString(String s)
 {
@@ -14,7 +14,7 @@ String ServoSorter::stateToString(String s)
 void ServoSorter::init(StateManager &stateManager)
 {
     goPlus.begin();
-    goPlus.Servo_write_angle(SERVO_NUM0, 90); // neutre
+    goPlus.Servo_write_angle(SERVO_NUM0, init_angle); // neutre
 
     // Observer l’état du servo
     stateManager.observeState<String>(
@@ -37,17 +37,13 @@ int ServoSorter::angleFor(Bin::Id bin) const
     switch (bin)
     {
     case Bin::BIN1:
-        Serial.print("Wazup bro, it's BIN1\n");
-        return 0;
+        return 10;
     case Bin::BIN2:
-        Serial.print("Wazup bro, it's BIN2\n");
-        return 90;
+        return 30;
     case Bin::BIN3:
-        Serial.print("Wazup bro, it's BIN3\n");
-        return 180;
+        return 60;
     default:
-        Serial.print("WTF is that ?\n");
-        return 90;
+        return 10;
     }
 }
 
@@ -76,8 +72,7 @@ void ServoSorter::moveTo(Bin::Id bin)
 
 bool ServoSorter::checkConnection()
 {
-    // Vérification : tester si le module GoPlus2 répond sur I2C
-    Wire.beginTransmission(GOPLUS_ADDR); // Adresse du GoPlus2 (0x38)
+    Wire.beginTransmission(GOPLUS_ADDR);
     byte error = Wire.endTransmission();
 
     if (error == 0)
