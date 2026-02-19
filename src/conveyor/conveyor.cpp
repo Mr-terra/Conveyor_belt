@@ -4,7 +4,7 @@
 
 #define CONVEYOR_ADDR 0x70
 
-Conveyor conveyor(5, 1000);
+Conveyor conveyor(10, 500);
 
 // États basés sur les états réels du module GRBL
 const String CONVEYOR_STATE_STOPPED = "STOPPED"; // 'I' (Idle)
