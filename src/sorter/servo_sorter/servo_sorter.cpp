@@ -37,13 +37,13 @@ int ServoSorter::angleFor(Bin::Id bin) const
     switch (bin)
     {
     case Bin::BIN1:
-        return 10;
+        return 0;
     case Bin::BIN2:
         return 30;
     case Bin::BIN3:
         return 60;
     default:
-        return 10;
+        return 0;
     }
 }
 
