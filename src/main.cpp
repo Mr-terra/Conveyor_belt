@@ -31,6 +31,8 @@ void setup()
 
     // Initialize serial communication
     Serial.begin(115200);
+    Wire.begin(21, 22); // M5Stack Core = SDA 21 / SCL 22
+    Wire.setClock(400000);
     M5.begin();
 
     // Initialiser le système
@@ -82,7 +84,8 @@ void setup()
     Serial.println("System initialized. State: WAITING");
 }
 
-void updateDisplay() {
+void updateDisplay()
+{
     M5.Lcd.setCursor(10, 100);
     M5.Lcd.print("Mode: ");
     M5.Lcd.println(scheduler.getState());
@@ -103,23 +106,29 @@ void loop()
     stateManager.monitorAllStates();
 
     // Gestion des boutons
-    if (M5.BtnA.wasPressed()) {
+    if (M5.BtnA.wasPressed())
+    {
         Serial.println("🔄 Bouton A pressed - Forward");
-        conveyor.start();  // S'assurer que le convoyeur est démarré
+        conveyor.start(); // S'assurer que le convoyeur est démarré
         conveyor.move(true);
         updateDisplay();
     }
-    else if (M5.BtnC.wasPressed()) {
+    else if (M5.BtnC.wasPressed())
+    {
         Serial.println("🔄 Bouton C pressed - Backward");
-        conveyor.start();  // S'assurer que le convoyeur est démarré
+        conveyor.start(); // S'assurer que le convoyeur est démarré
         conveyor.move(false);
         updateDisplay();
     }
-    else if (M5.BtnB.wasPressed()) {
+    else if (M5.BtnB.wasPressed())
+    {
         Serial.println("🔄 Bouton B pressed - Toggle Mode");
-        if (scheduler.getState() == "WAITING") {
+        if (scheduler.getState() == "WAITING")
+        {
             scheduler.triggerProduction();
-        } else {
+        }
+        else
+        {
             scheduler.triggerStop();
         }
         updateDisplay();
