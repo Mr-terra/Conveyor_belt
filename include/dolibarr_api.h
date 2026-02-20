@@ -3,29 +3,31 @@
 
 #include <Arduino.h>
 #include <HTTPClient.h>
-#include <WiFi.h>
 
 class DolibarrAPI
 {
 private:
-   String baseUrl;
-   String apiKey;
+    String baseUrl;
+    String apiKey;
 
-   String performGET(String url);
-   String performPOST(String url, String body);
+    String performGET(String url);
+    String performPOST(String url, String body);
+
 public:
-   DolibarrAPI(String url, String key);
+    // Constructeur
+    DolibarrAPI(String url, String key);
 
-   // Produit
-   String getProductByRef(String ref);
-   String getProductStock(int productId);
+    // Vérification connexion API
+    boolean checkConnection();
 
-   // Mouvement
-   String createStockMovement(int productId, int warehouseId, int qty, String movementType);
+    // Produits
+    String getProductByBarcode(String barcode);
 
-   // Vérifications système
-   bool checkConnection();
-   String checkWarehouse(int warehouseId);
+    // Stock
+    String createStockMovement(int productId, int warehouseId, int qty);
+
+    // Entrepôts
+    String checkWarehouse(int warehouseId);
 };
 
 #endif
