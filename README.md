@@ -67,11 +67,28 @@ pio run -t monitor -e m5stack-grey
 pio run -e m5stack-grey -t clean
 ```
 
-## If u want to expose port 80
+# How to setup Dolibarr app
+
+## 1. Build docker container
 
 ```bash
-netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=80 connectaddress={{WSL_PORT}} connectport=80
+docker compose up --build
 ```
+## 2. Setup Dolibarr in browser
+
+-> go to localhost:80
+
+### Active http request 
+
+Active module "API / Web services (serveur REST)"
+
+Create a token Dolapikey in user card
+
+### Products
+
+Active module "Products"
+
+Then create an extrafield : "options_default_target_warehouse_id"
 
 #########################################################################
 

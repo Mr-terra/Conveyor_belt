@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: API Gestion Produits & Stocks
+  description: Documentation Swagger de l'API avec authentification via DOLAPIKEY
+  version: 1.0.0
+
+servers:
+  - url: http://localhost/api/index.php
+
+components:
+  securitySchemes:
+    DolApiKeyAuth:
+      type: apiKey
+      in: header
+      name: DOLAPIKEY
+
+security:
+  - DolApiKeyAuth: []
+
+paths:
+  /users/info:
+    get:
+      summary: Récupérer les informations de l'utilisateur courant
+      tags:
+        - Users
+      responses:
+        "200":
+          description: Informations utilisateur récupérées avec succès
+
+  /warehouses/{id}:
+    get:
+      summary: Récupérer un entrepôt par ID
+      tags:
+        - Warehouses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Entrepôt trouvé
+        "404":
+          description: Entrepôt non trouvé
+
+  /products:
+    get:
+      summary: Rechercher des produits avec filtres SQL
+      tags:
+        - Products
+      parameters:
+        - name: sqlfilters
+          in: query
+          required: false
+          schema:
+            type: string
+          example: "(barcode:=:'041D19DA700000')"
+      responses:
+        "200":
+          description: Liste des produits
+
+    post:
+      summary: Créer un produit
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ref
+                - barcode
+                - label
+                - type
+                - price
+                - price_base_type
+                - status
+              properties:
+                ref:
+                  type: string
+                  example: PROD_RFID_03
+                barcode:
+                  type: string
+                  example: "041D19DA700000"
+                label:
+                  type: string
+                  example: Colis C
+                type:
+                  type: integer
+                  example: 0
+                price:
+                  type: number
+                  example: 0
+                price_base_type:
+                  type: string
+                  example: HT
+                status:
+                  type: integer
+                  example: 1
+                array_options:
+                  type: object
+                  properties:
+                    options_default_target_warehouse_id:
+                      type: string
+                      example: "3"
+      responses:
+        "201":
+          description: Produit créé avec succès
+
+  /products/{id}/stock:
+    get:
+      summary: Récupérer le stock d'un produit
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stock du produit
+
+  /stockmovements:
+    post:
+      summary: Créer un mouvement de stock
+      tags:
+        - Stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+                - warehouse_id
+                - qty
+              properties:
+                product_id:
+                  type: integer
+                  example: 10
+                warehouse_id:
+                  type: integer
+                  example: 3
+                qty:
+                  type: number
+                  example: 1
+      responses:
+        "201":
+          description: Mouvement de stock créé
+
+  /warehouses:
+    post:
+      summary: Créer un entrepôt
+      tags:
+        - Warehouses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - label
+              properties:
+                label:
+                  type: string
+                  example: Entrepôt A
+      responses:
+        "201":
+          description: Entrepôt créé
