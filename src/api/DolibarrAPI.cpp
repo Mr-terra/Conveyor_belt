@@ -65,8 +65,38 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
 
 boolean DolibarrAPI::checkConnection()
 {
+    if (WiFi.status() != WL_CONNECTED)
+        return false;
+
+    WiFiClient client;
+    HTTPClient http;
     String url = baseUrl + "/users/info";
-    return performGET(url).length() > 0;
+
+    Serial.print("URL: ");
+    Serial.println(url);
+    Serial.print("ESP32 IP: ");
+    Serial.println(WiFi.localIP());
+    Serial.print("Gateway: ");
+    Serial.println(WiFi.gatewayIP());
+
+    // http.setTimeout(8000);
+    // Serial.print("http.begin: ");
+    // Serial.print(http.begin(client, url));
+
+    if (!http.begin(client, url))
+        return false;
+
+    Serial.print("apiKey: ");
+    Serial.print(apiKey);
+
+    http.addHeader("DOLAPIKEY", apiKey);
+    int httpCode = http.GET();
+    Serial.print(" http.GET(): ");
+    Serial.print(httpCode);
+
+    http.end();
+
+    return httpCode == 200;
 }
 
 String DolibarrAPI::checkWarehouse(int warehouseId)

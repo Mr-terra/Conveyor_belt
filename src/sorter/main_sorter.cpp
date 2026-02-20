@@ -5,13 +5,12 @@
 
 #include "sorter_types.h"
 #include "reader.h"
-#include "adresser.h"
 #include "servo_sorter.h"
 #include "state_manager.h"
 #include "error.h"
+#include "globals.h"
 
 static RFIDReader rfid;
-static Adresser adresser;
 static ServoSorter servo;
 
 SorterController sorterController;
@@ -82,7 +81,8 @@ void SorterController::production()
   Serial.println(uidRead);
 
   Bin::Id bin = adresser.resolve(uidRead);
-  Serial.println("Bin return : " + bin);
+  Serial.print("Bin return: ");
+  Serial.println((int)bin);
   if (bin == Bin::NONE)
   {
     setState("RFID_READING_ERROR");

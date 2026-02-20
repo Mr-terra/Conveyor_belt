@@ -6,11 +6,12 @@ class DolibarrAPI;
 class Adresser
 {
 public:
-    Bin::Id resolve(const String &uid) const;
+    Adresser() : _api(nullptr) {}
     void setDolibarrAPI(DolibarrAPI *api);
+    Bin::Id resolve(const String &uid) const;
 
 private:
-    DolibarrAPI *_api = nullptr;
+    DolibarrAPI *_api;
 
     String cleanUid(const String &uid) const;
     int extractWarehouseId(const String &json) const;

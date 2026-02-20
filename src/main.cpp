@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include "conveyor.h"
 #include "scheduler.h"
 #include "check_connect.h"
@@ -8,16 +9,15 @@
 #include "error.h"
 #include "dolibarr_api.h"
 #include "adresser.h"
+#include "globals.h"
 
-#ifndef DOLIBARR_URL
-#error "DOLIBARR_URL not defined"
+#ifndef WIFI_SSID
+#error "WIFI_SSID not defined"
+#endif
+#ifndef WIFI_PASS
+#error "WIFI_PASS not defined"
 #endif
 
-#ifndef DOLIBARR_API_KEY
-#error "DOLIBARR_API_KEY not defined"
-#endif
-
-// Global objects
 extern Conveyor conveyor;
 extern Scheduler scheduler;
 extern CheckConnect checkConnect;
@@ -25,54 +25,60 @@ extern InitPosition initPosition;
 extern StateManager stateManager;
 extern SorterController sorterController;
 
-Adresser adresser;
+static bool dolibarrChecked = false;
 
-DolibarrAPI dolibarrApi(DOLIBARR_URL, DOLIBARR_API_KEY);
-
-// Global variables for states and conditions
-bool isStopButtonPressed = false;
+static bool waitWifi(uint32_t timeoutMs = 15000)
+{
+    uint32_t start = millis();
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        if (millis() - start > timeoutMs)
+            return false;
+        delay(200);
+    }
+    return true;
+}
 
 void setup()
 {
-
-    // Initialize serial communication
     Serial.begin(115200);
-    Wire.begin(21, 22); // M5Stack Core = SDA 21 / SCL 22
+    Wire.begin(21, 22);
     Wire.setClock(400000);
     M5.begin();
 
-    // Initialiser le système
     conveyor.initialize(stateManager);
     sorterController.initialize(stateManager);
+    adresser.setDolibarrAPI(&dolibarrApi);
+    Serial.printf("[SETUP] &adresser=%p  &dolibarrApi=%p\n", (void *)&adresser, (void *)&dolibarrApi);
 
-    Serial.println("🚀 System ready - Hardware monitoring active");
-    Serial.println("BtnA: Start | BtnB: Stop | BtnC: Info");
+    // 1) WiFi
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-    // Initialize all modules with automatic state monitoring
-    scheduler.initialize();
+    if (!waitWifi())
+    {
+        Serial.println("❌ WiFi connect timeout");
+    }
+    else
+    {
+        Serial.print("✅ WiFi OK, IP=");
+        Serial.println(WiFi.localIP());
+    }
 
-    // Configuration OBLIGATOIRE des dépendances pour CheckConnect
-    // Doit être fait avant tout appel à checkConnections()
+    // 2) Injecte TOUTES les deps AVANT d'initialiser le scheduler
     checkConnect.setDolibarrAPI(&dolibarrApi);
     checkConnect.setConveyor(&conveyor);
     checkConnect.setSorterController(&sorterController);
+    checkConnect.checkDolibarrConnection();
 
-    // Configuration des dépendances pour le Scheduler
-    scheduler.setDependencies(
-        &checkConnect,
-        &initPosition,
-        &sorterController,
-        &conveyor);
+    scheduler.setDependencies(&checkConnect, &initPosition, &sorterController, &conveyor);
+
+    // 3) Maintenant seulement tu lances le scheduler
+    scheduler.initialize();
 
     initPosition.initialize();
 
-    // Setup automatic state monitoring and callbacks
-    // setupStateMonitoring();
-
-    // Démarrer le convoyeur UNE SEULE FOIS
-    // conveyor.start();
-
-    // Affichage initial
+    // UI
     M5.Lcd.clear();
     M5.Lcd.setTextSize(2);
     M5.Lcd.setCursor(10, 10);
@@ -85,11 +91,7 @@ void setup()
     M5.Lcd.print("Mode: ");
     M5.Lcd.println(scheduler.getState());
 
-    // Démarrer en mode WAITING
     scheduler.triggerStop();
-
-    // instancie Dolibard pour l'adresser
-    adresser.setDolibarrAPI(&dolibarrApi);
 
     Serial.println("System initialized. State: WAITING");
 }
@@ -109,44 +111,36 @@ void loop()
 {
     M5.update();
 
-    // ✨ ÉTAPE 1 : Lire l'état depuis le hardware
-    conveyor.monitorHardware();
+    // Check Dolibarr UNE FOIS quand WiFi est vraiment OK
+    if (!dolibarrChecked && WiFi.status() == WL_CONNECTED)
+    {
+        dolibarrChecked = true;
+        bool ok = dolibarrApi.checkConnection();
+        Serial.println(ok ? "✅ Dolibarr OK" : "❌ Dolibarr FAIL");
+    }
 
-    // ✨ ÉTAPE 2 : Le StateManager détecte les changements et applique les rules
+    conveyor.monitorHardware();
     stateManager.monitorAllStates();
 
-    // Gestion des boutons
     if (M5.BtnA.wasPressed())
     {
         Serial.println("🔄 Bouton A pressed - Forward");
         conveyor.move(true);
-        updateDisplay();
     }
     else if (M5.BtnC.wasPressed())
     {
         Serial.println("🔄 Bouton C pressed - Backward");
         conveyor.move(false);
-        updateDisplay();
     }
     else if (M5.BtnB.wasPressed())
     {
         Serial.println("🔄 Bouton B pressed - Toggle Mode");
         if (scheduler.getState() == "WAITING")
-        {
             scheduler.triggerProduction();
-        }
         else
-        {
             scheduler.triggerStop();
-        }
-        updateDisplay();
     }
-    // Exécution de la logique de l'état courant via le scheduler
-    // C'est le scheduler qui gère maintenant tout le flux de travail
-    scheduler.executeCurrentState();
-    // Error management is now automatic through state monitoring
-    // The StateManager will automatically execute safety measures for critical errors
 
-    // Delay to avoid overload
+    scheduler.executeCurrentState();
     delay(100);
 }

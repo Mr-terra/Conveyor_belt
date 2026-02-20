@@ -2,9 +2,9 @@
 #include "dolibarr_api.h"
 #include <ArduinoJson.h>
 
-int warehouse1 = 1;
-int warehouse2 = 2;
-int warehouse3 = 3;
+static constexpr int WAREHOUSE_1 = 1;
+static constexpr int WAREHOUSE_2 = 2;
+static constexpr int WAREHOUSE_3 = 3;
 
 void Adresser::setDolibarrAPI(DolibarrAPI *api)
 {
@@ -13,14 +13,22 @@ void Adresser::setDolibarrAPI(DolibarrAPI *api)
 
 Bin::Id Adresser::resolve(const String &uid) const
 {
+    Serial.printf("[RESOLVE] this=%p  _api=%p\n", (void *)this, (void *)_api);
     if (_api == nullptr)
     {
-        Serial.println("❌ DolibarrAPI not set in Adresser");
+        Serial.println("[ERR] DolibarrAPI not set (Adresser::_api is null)");
         return Bin::NONE;
     }
 
     String trimmedUid = cleanUid(uid);
     String jsonResponse = _api->getProductByBarcode(trimmedUid);
+
+    if (jsonResponse.length() == 0)
+    {
+        Serial.println("[ERR] Empty HTTP response");
+        return Bin::NONE;
+    }
+    Serial.print(jsonResponse);
 
     int warehouseId = extractWarehouseId(jsonResponse);
     int productId = extractProductId(jsonResponse);
@@ -30,17 +38,17 @@ Bin::Id Adresser::resolve(const String &uid) const
     Serial.print("Product ID: ");
     Serial.println(productId);
 
-    if (warehouseId == warehouse1)
+    if (warehouseId == WAREHOUSE_1)
     {
         _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN1;
     }
-    if (warehouseId == warehouse2)
+    if (warehouseId == WAREHOUSE_2)
     {
         _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN2;
     }
-    if (warehouseId == warehouse3)
+    if (warehouseId == WAREHOUSE_3)
     {
         _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN3;
@@ -53,7 +61,8 @@ String Adresser::cleanUid(const String &uid) const
 {
     String result = uid;
     result.replace(":", "");
-    return result;
+
+    return "'" + result + "'";
 }
 
 int Adresser::extractWarehouseId(const String &json) const
@@ -70,10 +79,16 @@ int Adresser::extractWarehouseId(const String &json) const
     }
 
     // Ton JSON est un tableau → on prend l’index 0
-    JsonObject product = doc[0];
+    if (!doc.is<JsonArray>() || doc.size() == 0)
+    {
+        Serial.println("[ERR] JSON is not array or empty");
+        return -1;
+    }
+
+    JsonObject product = doc[0].as<JsonObject>();
 
     const char *warehouseId =
-        product["array_options"]["options_default_target_warehouse_id"];
+        product["array_options"]["options_options_default_target_warehouse_id"];
 
     if (warehouseId == nullptr)
         return -1;
@@ -93,7 +108,13 @@ int Adresser::extractProductId(const String &json) const
         return -1;
     }
 
-    JsonObject product = doc[0];
+    if (!doc.is<JsonArray>() || doc.size() == 0)
+    {
+        Serial.println("[ERR] JSON is not array or empty");
+        return -1;
+    }
+
+    JsonObject product = doc[0].as<JsonObject>();
 
     const char *productId = product["id"];
 

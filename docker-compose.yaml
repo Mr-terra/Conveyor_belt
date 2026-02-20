@@ -15,7 +15,7 @@ services:
         environment:
             DOLI_INIT_DEMO: ${DOLI_INIT_DEMO:-0}
             DOLI_DB_HOST: ${DOLI_DB_HOST:-mariadb}
-            DOLI_URL_ROOT: "http://localhost:80"
+            DOLI_URL_ROOT: "http://localhost:81"
             DOLI_ADMIN_LOGIN: admin
             DOLI_ADMIN_PASSWORD: admin
             DOLI_DB_USER: dolidbuser
@@ -28,7 +28,7 @@ services:
             WWW_GROUP_ID: ${WWW_GROUP_ID:-1000}
 
         ports:
-            - "80:80"
+            - "81:80"
         links:
             - mariadb
         volumes:
