@@ -7,6 +7,7 @@
 #include "main_sorter.h"
 #include "error.h"
 #include "dolibarr_api.h"
+#include "adresser.h"
 
 // Global objects
 extern Conveyor conveyor;
@@ -15,6 +16,8 @@ extern CheckConnect checkConnect;
 extern InitPosition initPosition;
 extern StateManager stateManager;
 extern SorterController sorterController;
+
+Adresser adresser;
 
 // Configuration Dolibarr (à adapter selon votre environnement)
 // Remplacez par l'URL et la clé API de votre instance Dolibarr
@@ -81,6 +84,9 @@ void setup()
 
     // Démarrer en mode WAITING
     scheduler.triggerStop();
+
+    // instancie Dolibard pour l'adresser
+    adresser.setDolibarrAPI(&dolibarrApi);
 
     Serial.println("System initialized. State: WAITING");
 }

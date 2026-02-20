@@ -1,19 +1,104 @@
 #include "adresser.h"
+#include "dolibarr_api.h"
+#include <ArduinoJson.h>
 
-// TODO : ADAPTER LA PROCEDURE POUR TRIER LES COLIS
-//  + si data like 00:00:AA:?? alors boite 1 ?
+int warehouse1 = 1;
+int warehouse2 = 2;
+int warehouse3 = 3;
+
+void Adresser::setDolibarrAPI(DolibarrAPI *api)
+{
+    _api = api;
+}
+
 Bin::Id Adresser::resolve(const String &uid) const
 {
-    Serial.print("Wazup bro, i am adressing your package \n");
-    // call to dolibard to get warehouse
-    if (uid == "04:1C:19:DA:70:00:00")
-        // call to dolibard to move goods to warehouse X
+    if (_api == nullptr)
+    {
+        Serial.println("❌ DolibarrAPI not set in Adresser");
+        return Bin::NONE;
+    }
+
+    String trimmedUid = cleanUid(uid);
+    String jsonResponse = _api->getProductByBarcode(trimmedUid);
+
+    int warehouseId = extractWarehouseId(jsonResponse);
+    int productId = extractProductId(jsonResponse);
+
+    Serial.print("Warehouse ID: ");
+    Serial.println(warehouseId);
+    Serial.print("Product ID: ");
+    Serial.println(productId);
+
+    if (warehouseId == warehouse1)
+    {
+        _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN1;
-    if (uid == "04:1D:19:DA:70:00:00")
-        // call to dolibard to move goods to warehouse X
+    }
+    if (warehouseId == warehouse2)
+    {
+        _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN2;
-    if (uid == "04:1B:19:DA:70:00:00")
-        // call to dolibard to move goods to warehouse X
+    }
+    if (warehouseId == warehouse3)
+    {
+        _api->createStockMovement(productId, warehouseId, 1);
         return Bin::BIN3;
+    }
+
     return Bin::NONE;
+}
+
+String Adresser::cleanUid(const String &uid) const
+{
+    String result = uid;
+    result.replace(":", "");
+    return result;
+}
+
+int Adresser::extractWarehouseId(const String &json) const
+{
+    DynamicJsonDocument doc(4096);
+
+    DeserializationError error = deserializeJson(doc, json);
+
+    if (error)
+    {
+        Serial.print("JSON parse failed: ");
+        Serial.println(error.c_str());
+        return -1;
+    }
+
+    // Ton JSON est un tableau → on prend l’index 0
+    JsonObject product = doc[0];
+
+    const char *warehouseId =
+        product["array_options"]["options_default_target_warehouse_id"];
+
+    if (warehouseId == nullptr)
+        return -1;
+
+    return atoi(warehouseId);
+}
+
+int Adresser::extractProductId(const String &json) const
+{
+    DynamicJsonDocument doc(4096);
+
+    DeserializationError error = deserializeJson(doc, json);
+    if (error)
+    {
+        Serial.print("JSON parse failed: ");
+        Serial.println(error.c_str());
+        return -1;
+    }
+
+    JsonObject product = doc[0];
+
+    const char *productId = product["id"];
+
+    if (productId == nullptr)
+        return -1;
+
+    return atoi(productId);
 }
