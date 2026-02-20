@@ -9,6 +9,14 @@
 #include "dolibarr_api.h"
 #include "adresser.h"
 
+#ifndef DOLIBARR_URL
+#error "DOLIBARR_URL not defined"
+#endif
+
+#ifndef DOLIBARR_API_KEY
+#error "DOLIBARR_API_KEY not defined"
+#endif
+
 // Global objects
 extern Conveyor conveyor;
 extern Scheduler scheduler;
@@ -18,11 +26,6 @@ extern StateManager stateManager;
 extern SorterController sorterController;
 
 Adresser adresser;
-
-// Configuration Dolibarr (à adapter selon votre environnement)
-// Remplacez par l'URL et la clé API de votre instance Dolibarr
-const String DOLIBARR_URL = "http://votre-serveur-dolibarr.com/api/index.php";
-const String DOLIBARR_API_KEY = "votre-cle-api-dolibarr";
 
 DolibarrAPI dolibarrApi(DOLIBARR_URL, DOLIBARR_API_KEY);
 
