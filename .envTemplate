@@ -1,0 +1,2 @@
+const String DOLIBARR_URL = "http://votre-serveur-dolibarr.com/api/index.php";
+const String DOLIBARR_API_KEY = "votre-cle-api-dolibarr";
