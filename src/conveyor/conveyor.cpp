@@ -83,21 +83,48 @@ void Conveyor::initialize(StateManager &stateManager)
 
 bool Conveyor::checkConnection()
 {
-    // Vérification : tester la communication I2C avec le module GRBL
+    // Vérification robuste : tester la communication I2C avec le module GRBL
     Wire.begin();
+    
+    // Étape 1 : Vérification basique de l'adresse I2C
     Wire.beginTransmission(CONVEYOR_ADDR); // Adresse par défaut du GRBL
     byte error = Wire.endTransmission();
 
-    if (error == 0)
+    if (error != 0)
     {
-        Serial.println("✅ GRBL Motor detected at " + String(CONVEYOR_ADDR, HEX));
-        return true;
-    }
-    else
-    {
-        Serial.printf("❌ GRBL Motor not detected at 0x%X (error: %d)\n", CONVEYOR_ADDR, error);
+        Serial.printf("❌ GRBL Motor not detected at 0x%X (I2C error: %d)\n", CONVEYOR_ADDR, error);
+        Serial.println("   Possible causes: ");
+        Serial.println("   - Module not powered");
+        Serial.println("   - Wrong I2C address");
+        Serial.println("   - I2C bus not initialized");
+        Serial.println("   - Wiring issue");
         return false;
     }
+
+    // Étape 2 : Vérification que le module répond aux commandes
+    String status = _grbl.readStatus();
+    
+    if (status.length() == 0)
+    {
+        Serial.println("❌ GRBL Motor detected but not responding to commands");
+        Serial.println("   Possible causes: ");
+        Serial.println("   - Module not properly initialized");
+        Serial.println("   - Communication error");
+        return false;
+    }
+
+    // Étape 3 : Vérification que le module n'est pas en état d'erreur
+    if (_grbl.inLock())
+    {
+        Serial.println("❌ GRBL Motor is in LOCK/ALARM state");
+        Serial.println("   Module needs to be unlocked before use");
+        return false;
+    }
+
+    Serial.println("✅ GRBL Motor detected and operational at " + String(CONVEYOR_ADDR, HEX));
+    Serial.print("📊 Current status: ");
+    Serial.println(status);
+    return true;
 }
 
 // ✨ CŒUR DU SYSTÈME : Lecture de l'état depuis le hardware

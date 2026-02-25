@@ -42,6 +42,7 @@ public:
 
 private:
     String _current_state;
+    bool canRecoverFromError(); // Méthode pour vérifier si les conditions d'erreur sont résolues
 };
 
 #endif

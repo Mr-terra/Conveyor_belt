@@ -46,15 +46,4 @@ private:
     String _currentState;
 };
 
-// // readStatus() retourne une String commençant par:
-// 'I' = Idle (arrêté, prêt)
-// 'A' = Alarm (module verrouillé, erreur critique)
-// 'R' = Run (en mouvement)
-// 'J' = Jog (mouvement manuel)
-// 'H' = Hold (pause)
-
-// // Fonctions helper:
-// readIdle()  → return readStatus()[0] == 'I'
-// inLock()    → return readStatus()[0] == 'A'
-
 #endif

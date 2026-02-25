@@ -27,8 +27,43 @@ void StateManager::checkStateRules(String module, String fromState, String toSta
             (rule.toState == toState || rule.toState == "*"))
         {
             Error::triggerError(rule.message, rule.level, module);
+            
+            // Gérer les changements d'état critiques
+            handleCriticalStateChange(module, toState, rule.level);
         }
     }
+}
+
+void StateManager::handleCriticalStateChange(String module, String newState, ErrorLevel level)
+{
+    if (_scheduler == nullptr) {
+        return; // Pas de scheduler configuré, ne rien faire
+    }
+
+    // Gestion des états critiques par module
+    if (module == "Conveyor") {
+        if (newState == "ALARM") {
+            Serial.println("🚨 Critical conveyor ALARM detected");
+            
+            // Si nous sommes en production, passer en WAITING
+            if (_scheduler->getState() == STATE_PRODUCTION) {
+                Serial.println("   Stopping production due to conveyor alarm");
+                _scheduler->setState(STATE_WAITING);
+            }
+            
+            // Pour les erreurs fatales, passer en ERROR
+            if (level == ERROR_FATAL) {
+                Serial.println("   Fatal error - switching to ERROR state");
+                _scheduler->setState(STATE_ERROR);
+            }
+        }
+    }
+}
+
+void StateManager::setScheduler(Scheduler* scheduler)
+{
+    _scheduler = scheduler;
+    Serial.println("✅ StateManager configured with Scheduler reference");
 }
 
 void StateManager::monitorAllStates()

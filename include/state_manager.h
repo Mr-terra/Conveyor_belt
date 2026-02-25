@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include "error.h"
+#include "scheduler.h"
 
 class StateManager {
 public:
@@ -21,9 +22,13 @@ public:
     template<typename T>
     void configureModuleStateMonitoring(T* stateVariable, String moduleName, String (*stateToString)(T), 
                                       void (*setupRules)(StateManager&));
+    
+    // Set scheduler reference for state coordination
+    void setScheduler(Scheduler* scheduler);
 
 private:
     bool hasCriticalErrorFlag = false;
+    Scheduler* _scheduler = nullptr; // Reference to scheduler for state coordination
     
     struct StateRule {
         String module;
@@ -52,6 +57,8 @@ private:
     // Template implementation for state observation
     template<typename T>
     void addStateMonitor(T* stateVariable, String moduleName, String (*stateToString)(T));
+
+    void handleCriticalStateChange(String module, String newState, ErrorLevel level);
 };
 
 // Template implementations MUST be in header file
