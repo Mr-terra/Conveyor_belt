@@ -44,3 +44,13 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wextra
     -Werror
 )
+
+if(BUILD_FIRMWARE)
+  # Configuration pour ESP32 avec Arduino
+  find_package(Arduino REQUIRED)
+  arduino_add_executable(...)
+else()
+  # Configuration pour les tests (sans Arduino)
+  add_executable(conveyor_tests ${TEST_SOURCES})
+  target_link_libraries(conveyor_tests GTest::GTest)
+endif()
