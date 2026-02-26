@@ -41,18 +41,15 @@ jobs:
 
     - name: Install Arduino ESP32 framework
       run: |
-        # Installation du framework Arduino ESP32
         mkdir -p ~/Arduino/hardware/espressif
         cd ~/Arduino/hardware/espressif
 
-        # Télécharger la dernière version stable
-        wget https://github.com/espressif/arduino-esp32/releases/latest/download/arduino-esp32-linux64.tar.gz
-        tar -xzf arduino-esp32-linux64.tar.gz
-        rm arduino-esp32-linux64.tar.gz
-        mv arduino-esp32* esp32
-
-        # Installation des outils
-        cd esp32/tools
+        # Méthode alternative: cloner le dépôt et utiliser la branche master
+        git clone https://github.com/espressif/arduino-esp32.git esp32
+        cd esp32
+        git checkout master
+        git submodule update --init --recursive
+        cd tools
         python3 get.py
 
     - name: Configure CMake
@@ -61,6 +58,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_FIRMWARE=ON \
           -DBUILD_TESTS=OFF \
+          -DARDUINO_PATH=$HOME/Arduino \
           -DM5STACK_PATH=${{ github.workspace }}/lib/M5Stack_lib \
           -DGRBL_PATH=${{ github.workspace }}/lib/Module_GRBL_13.2 \
           -DMFRC522_PATH=${{ github.workspace }}/lib/MFRC522_I2C \
@@ -73,4 +71,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: build/${{ env.PROJECT_NAME }}.elf
+        path: build/firmware.bin
