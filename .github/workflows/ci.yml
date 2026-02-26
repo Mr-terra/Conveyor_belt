@@ -44,13 +44,15 @@ jobs:
         mkdir -p ~/Arduino/hardware/espressif
         cd ~/Arduino/hardware/espressif
 
-        # Méthode alternative: cloner le dépôt et utiliser la branche master
-        git clone https://github.com/espressif/arduino-esp32.git esp32
-        cd esp32
-        git checkout master
-        git submodule update --init --recursive
-        cd tools
-        python3 get.py
+        # Télécharger la dernière version stable
+        # D'abord, trouver l'URL correcte
+        LATEST_URL=$(curl -s https://api.github.com/repos/espressif/arduino-esp32/releases/latest | \
+                    grep "browser_download_url.*tar.gz" | \
+                    cut -d '"' -f 4)
+        wget $LATEST_URL -O arduino-esp32.tar.gz
+        tar -xzf arduino-esp32.tar.gz
+        rm arduino-esp32.tar.gz
+        mv arduino-esp32* esp32
 
     - name: Configure CMake
       run: |
