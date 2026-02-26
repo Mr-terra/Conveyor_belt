@@ -55,7 +55,6 @@ void ServoSorter::moveTo(Bin::Id bin)
     if (bin == Bin::NONE)
     {
         servoState = "ERROR";
-        return;
     }
 
     servoState = "MOVING";
