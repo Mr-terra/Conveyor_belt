@@ -4,7 +4,7 @@
 
 #define CONVEYOR_ADDR 0x70
 
-Conveyor conveyor(10, 500);
+Conveyor conveyor(10, 250);
 
 // États basés sur les états réels du module GRBL
 const String CONVEYOR_STATE_STOPPED = "STOPPED"; // 'I' (Idle)
@@ -85,7 +85,7 @@ bool Conveyor::checkConnection()
 {
     // Vérification robuste : tester la communication I2C avec le module GRBL
     Wire.begin();
-    
+
     // Étape 1 : Vérification basique de l'adresse I2C
     Wire.beginTransmission(CONVEYOR_ADDR); // Adresse par défaut du GRBL
     byte error = Wire.endTransmission();
@@ -103,7 +103,7 @@ bool Conveyor::checkConnection()
 
     // Étape 2 : Vérification que le module répond aux commandes
     String status = _grbl.readStatus();
-    
+
     if (status.length() == 0)
     {
         Serial.println("❌ GRBL Motor detected but not responding to commands");

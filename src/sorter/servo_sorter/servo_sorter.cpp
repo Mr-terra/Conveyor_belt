@@ -37,12 +37,17 @@ int ServoSorter::angleFor(Bin::Id bin) const
     switch (bin)
     {
     case Bin::BIN1:
+        Serial.print("BIN1 angle");
         return 0;
     case Bin::BIN2:
+        Serial.print("BIN2 angle");
+
         return 30;
     case Bin::BIN3:
+        Serial.print("BIN3 angle");
         return 60;
     default:
+        Serial.print("Default angle");
         return 0;
     }
 }
@@ -55,7 +60,6 @@ void ServoSorter::moveTo(Bin::Id bin)
     if (bin == Bin::NONE)
     {
         servoState = "ERROR";
-        return;
     }
 
     servoState = "MOVING";
