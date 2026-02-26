@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -41,12 +41,12 @@ jobs:
 
     - name: Install Arduino ESP32 framework
       run: |
-        # Installation du framework Arduino ESP32
         mkdir -p ~/Arduino/hardware/espressif
         cd ~/Arduino/hardware/espressif
         git clone https://github.com/espressif/arduino-esp32.git esp32
         cd esp32
-        git checkout release/2.0.11
+        # Utiliser la dernière version stable (au lieu de release/2.0.11)
+        git checkout latest
         git submodule update --init --recursive
         cd tools
         python3 get.py
