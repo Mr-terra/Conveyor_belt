@@ -51,17 +51,17 @@ Only `src/hal/firmware/` talks to the M5Stack, GRBL, MFRC522, GoPlus2, HTTP and 
 
 ## Configuration
 
-Secrets are not committed. Create a `.env` file at the root of the project (the file is ignored by git):
+No secret is compiled into the firmware. The Wi-Fi and Dolibarr settings are entered once,
+over the serial console (115200 baud), and kept in the ESP32 flash:
 
-```ini
-DOLIBARR_URL=http://your-dolibarr-server/api/index.php
-DOLIBARR_API_KEY=your-dolibarr-api-key
-WIFI_SSID=your-network
-WIFI_PASS=your-password
+```
+set wifi <ssid> <password>
+set dolibarr <url> <api-key>
+show
 ```
 
-`env_script.py` reads this file before every build and injects the values as compile-time
-definitions. The build fails with a clear message if one of them is missing.
+Each `set` saves the setting and restarts the board. `show` prints the settings without the
+password or the API key. The settings survive reflashing; erasing the flash clears them.
 
 ## Build the Firmware
 
@@ -141,17 +141,15 @@ Then open `http://localhost:80` and:
 GitHub Actions runs on every push and pull request (`.github/workflows/ci.yml`):
 
 - **Unit Tests**: configures and builds the host tests with CMake, then runs them with CTest.
-- **Firmware Build (PlatformIO)**: writes `.env` from repository secrets, builds `m5stack-grey` and uploads `firmware.bin` as an artifact.
+- **Firmware Build (PlatformIO)**: builds `m5stack-grey` and uploads `firmware.bin` as an artifact.
 
-The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_KEY`,
-`WIFI_SSID`, `WIFI_PASS`.
+The workflow runs only on pushes to `main`. It needs no repository secrets.
 
 ## Project Structure
 
 ```
 .
 ├── platformio.ini          PlatformIO environment (board, pinned platform, libraries)
-├── env_script.py           Injects the .env values into the firmware build
 ├── CMakeLists.txt          Host build (tests)
 ├── include/                Module interfaces; include/hal/ holds the hardware interfaces
 ├── src/

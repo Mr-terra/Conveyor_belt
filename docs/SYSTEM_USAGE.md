@@ -89,27 +89,21 @@ The RFID conveyor system is designed to automate parcel sorting using:
 
 ### Initial Configuration
 
-#### 1. WiFi Configuration
+#### 1. WiFi and Dolibarr Configuration
 
-Edit in `src/main.cpp`:
+Settings are not compiled in. Connect the M5Stack over USB and open the serial monitor at
+115200 baud, then send:
 
-```cpp
-// WiFi configuration (add if needed)
-const char* WIFI_SSID = "your-wifi-network";
-const char* WIFI_PASSWORD = "your-password";
+```
+set wifi <ssid> <password>
+set dolibarr <url> <api-key>
+show
 ```
 
-#### 2. Dolibarr Configuration
+Each `set` saves the setting to flash and restarts the board. `show` prints the settings
+without the password or the API key.
 
-Edit in `src/main.cpp`:
-
-```cpp
-// Dolibarr configuration
-const String DOLIBARR_URL = "http://your-dolibarr-server.com/api/index.php";
-const String DOLIBARR_API_KEY = "your-dolibarr-api-key";
-```
-
-#### 3. Hardware Configuration
+#### 2. Hardware Configuration
 
 - **I2C address**: Default 0x70 for the GRBL module
 - **Conveyor speed**: Adjustable via `conveyor.setSpeed(1000)` (0-1000)
