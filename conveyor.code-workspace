@@ -3,10 +3,6 @@
 		{
 			"name": "the conveyor",
 			"path": "."
-		},
-		{
-			"name": "T-IOT-911",
-			"path": "../../../projet epitech/T-IOT-911"
 		}
 	],
 	"settings": {}
