@@ -78,6 +78,14 @@ TEST_F(AddresserTest, AcceptsWarehouseKeyAsDocumentedInSwagger)
     EXPECT_EQ(addresser.resolve("04:1A:2B"), Bin::BIN2);
 }
 
+TEST_F(AddresserTest, FailedStockMovementStillDivertsTheParcel)
+{
+    ON_CALL(http, get(_, _)).WillByDefault(Return(productIn(1)));
+    EXPECT_CALL(http, post(_, _, _)).WillOnce(Return(HttpResponse{500, String("{\"error\":\"down\"}")}));
+
+    EXPECT_EQ(addresser.resolve("04:A1:B2"), Bin::BIN1);
+}
+
 TEST_F(AddresserTest, UnknownWarehouseIsNotSortedAndNoStockMovementIsRecorded)
 {
     ON_CALL(http, get(_, _)).WillByDefault(Return(productIn(7)));

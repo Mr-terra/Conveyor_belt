@@ -2,9 +2,18 @@
 #include "dolibarr_api.h"
 #include <ArduinoJson.h>
 
-static constexpr int WAREHOUSE_1 = 1;
-static constexpr int WAREHOUSE_2 = 2;
-static constexpr int WAREHOUSE_3 = 3;
+// Dolibarr warehouse id -> sorter bin. Add a row to route another warehouse.
+struct WarehouseBin
+{
+    int warehouseId;
+    Bin::Id bin;
+};
+
+static constexpr WarehouseBin WAREHOUSE_BINS[] = {
+    {1, Bin::BIN1},
+    {2, Bin::BIN2},
+    {3, Bin::BIN3},
+};
 
 void Addresser::setDolibarrAPI(DolibarrAPI *api)
 {
@@ -38,20 +47,16 @@ Bin::Id Addresser::resolve(const String &uid) const
     Serial.print("Product ID: ");
     Serial.println(productId);
 
-    if (warehouseId == WAREHOUSE_1)
+    for (const WarehouseBin &route : WAREHOUSE_BINS)
     {
-        _api->createStockMovement(productId, warehouseId, 1);
-        return Bin::BIN1;
-    }
-    if (warehouseId == WAREHOUSE_2)
-    {
-        _api->createStockMovement(productId, warehouseId, 1);
-        return Bin::BIN2;
-    }
-    if (warehouseId == WAREHOUSE_3)
-    {
-        _api->createStockMovement(productId, warehouseId, 1);
-        return Bin::BIN3;
+        if (warehouseId != route.warehouseId)
+            continue;
+
+        // The parcel is diverted even when Dolibarr rejects the movement: the stock
+        // count is then wrong, and the error log is the only trace of it.
+        if (!_api->createStockMovement(productId, warehouseId, 1))
+            Serial.println("[ERR] Stock movement was not recorded in Dolibarr");
+        return route.bin;
     }
 
     return Bin::NONE;

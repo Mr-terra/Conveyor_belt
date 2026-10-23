@@ -30,7 +30,7 @@ public:
     String getProductByBarcode(String barcode);
 
     // Stock
-    String createStockMovement(int productId, int warehouseId, int qty);
+    bool createStockMovement(int productId, int warehouseId, int qty);  // true on HTTP 200/201
 };
 
 #endif

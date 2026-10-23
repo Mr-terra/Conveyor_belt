@@ -30,7 +30,7 @@ String DolibarrAPI::getProductByBarcode(String barcode)
     return performGET(url);
 }
 
-String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
+bool DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
 {
     String url = baseUrl + "/stockmovements";
 
@@ -40,7 +40,8 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
     body += "\"qty\":" + String(qty);
     body += "}";
 
-    return performPOST(url, body);
+    HttpResponse response = _http->post(url, apiKey, body);
+    return response.statusCode == 200 || response.statusCode == 201;
 }
 
 boolean DolibarrAPI::checkConnection()
