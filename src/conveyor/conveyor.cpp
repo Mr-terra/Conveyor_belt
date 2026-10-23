@@ -266,13 +266,8 @@ void Conveyor::move(bool forward)
     // Increase the _movement value for a visible movement
     int angle = forward ? _movement : -_movement;
 
+    // Called every loop tick: no log here, the state changes are logged by readHardwareState()
     _grbl->setMotor(angle, 0, 0, _speed);
-
-    Serial.print("Moving: angle=");
-    Serial.print(angle);
-    Serial.print(", speed=");
-    Serial.println(_speed);
-    // The state will be updated automatically by monitorHardware()
 }
 
 void Conveyor::setSpeed(int speed)

@@ -145,8 +145,6 @@ void Scheduler::executeCurrentState() {
         }
     }
     else if (_current_state == STATE_PRODUCTION) {
-        Serial.println("🏭 Executing PRODUCTION state");
-        
         // Check the conveyor state before continuing
         if (_conveyor != nullptr && _conveyor->getState() == "ALARM") {
             Serial.println("❌ Conveyor in ALARM state during production - stopping");
@@ -162,8 +160,7 @@ void Scheduler::executeCurrentState() {
         }
     }
     else if (_current_state == STATE_WAITING) {
-        // In the WAITING state, the system is ready but does nothing
-        Serial.println("⏳ System in WAITING state - ready for operation");
+        // In the WAITING state, the system is ready but does nothing (no log: runs every tick)
     }
 }
 
