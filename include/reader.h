@@ -18,4 +18,6 @@ public:
 private:
     IRfidDriver *_driver = nullptr;
     II2CBus *_bus = nullptr;
+    bool _hasTriggered = false;
+    uint32_t _lastTriggerMs = 0;
 };

@@ -33,10 +33,14 @@ conveyor/
 ├── src/
 │   └── CMakeLists.txt             # CMake configuration for the source code
 ├── test/
-│   ├── CMakeLists.txt             # CMake configuration for the tests
-│   └── conveyor_tests/
-│       └── CMakeLists.txt         # CMake configuration for the unit tests
+│   ├── CMakeLists.txt             # Test dependencies and host test target
+│   ├── host/
+│   │   ├── include/Arduino.h      # Fake Arduino core for the PC build
+│   │   ├── fakes/                 # gMock doubles of the HAL interfaces
+│   │   └── tests/                 # Unit tests (*_test.cpp)
+│   └── test_integration.cpp       # Arduino-style integration sketch
 ├── include/                        # Header files
+│   └── hal/                       # Hardware abstraction interfaces
 ├── lib/                           # External libraries
 └── workflows/
     └── ci.yml                     # GitHub Actions CI configuration
@@ -112,31 +116,23 @@ target_link_libraries(conveyor
 
 ### 2.3. CMakeLists.txt file in test/
 
-This file configures the compilation and execution of the tests:
+This file configures the host build of the firmware logic and the unit tests:
 
-- Creation of the test executables
-- Configuration of the test dependencies
-- Registration of the tests with CTest
+- Fetches googletest 1.14.0 and ArduinoJson 6.21.5 (`FetchContent`, no system install)
+- Builds the firmware logic (`firmware_logic`) for the PC, without the ESP32-only adapters in `src/hal/firmware/`
+- Builds the `host_tests` executable and registers its tests with CTest
 
 Example:
 
 ```cmake
-# Create the unit test executable
-add_executable(conveyor_unit_test
-    conveyor_tests/conveyor_unit_test.cpp
-    conveyor_tests/mock_grbl.h
-    conveyor_tests/mock_wire.h
-)
+add_library(firmware_logic STATIC ${HOST_LOGIC_SOURCES})
 
-# Dependency configuration
-target_link_libraries(conveyor_unit_test
-    conveyor
-    GTest::GTest
-    GTest::Main
+file(GLOB HOST_TEST_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/host/tests/*.cpp
 )
-
-# Register the test with CTest
-add_test(NAME conveyor_unit_test COMMAND conveyor_unit_test)
+add_executable(host_tests ${HOST_TEST_SOURCES})
+target_link_libraries(host_tests PRIVATE firmware_logic gmock_main)
+gtest_discover_tests(host_tests)
 ```
 
 ## 3. Building the project
@@ -190,7 +186,8 @@ make
 
 ### 4.1. Unit tests
 
-The unit tests are located in the `test/conveyor_tests/` directory.
+The unit tests are located in `test/host/tests/`. They run on the PC and replace
+the hardware with the doubles in `test/host/fakes/`.
 
 To run the tests:
 
@@ -202,7 +199,14 @@ ctest
 Or for a specific test:
 
 ```bash
-ctest -R conveyor_unit_test
+ctest -R ConveyorTest
+```
+
+To build only the tests (firmware disabled, as in CI):
+
+```bash
+cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_FIRMWARE=OFF
+cmake --build build
 ```
 
 ### 4.2. Integration tests

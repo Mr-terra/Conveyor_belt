@@ -2,13 +2,13 @@
 
 #define RFID_ADDR 0x28
 
-static uint32_t lastTriggerMs = 0;
 static const uint32_t COOLDOWN_MS = 1500;
 
 void RFIDReader::setHardware(IRfidDriver *driver, II2CBus *bus)
 {
     _driver = driver;
     _bus = bus;
+    _hasTriggered = false;
 }
 
 void RFIDReader::init()
@@ -24,12 +24,13 @@ String RFIDReader::readUid()
         return "";
 
     uint32_t now = millis();
-    if (now - lastTriggerMs < COOLDOWN_MS)
+    if (_hasTriggered && now - _lastTriggerMs < COOLDOWN_MS)
     {
         _driver->halt();
         return "";
     }
-    lastTriggerMs = now;
+    _hasTriggered = true;
+    _lastTriggerMs = now;
 
     uint8_t uidBytes[10];
     uint8_t size = _driver->uidBytes(uidBytes, sizeof(uidBytes));
