@@ -56,9 +56,9 @@ TEST_F(ServoSorterTest, Bin3PointsTo60Degrees)
     sorter.moveTo(Bin::BIN3);
 }
 
-TEST_F(ServoSorterTest, UnknownBinFallsBackToZeroDegrees)
+TEST_F(ServoSorterTest, UnknownBinLeavesServoInPlace)
 {
-    EXPECT_CALL(servo, writeAngle(0, 0)).Times(1);
+    EXPECT_CALL(servo, writeAngle(_, _)).Times(0);
 
     sorter.moveTo(Bin::NONE);
 }

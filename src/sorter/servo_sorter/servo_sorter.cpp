@@ -65,7 +65,10 @@ void ServoSorter::moveTo(Bin::Id bin)
 
     if (bin == Bin::NONE)
     {
+        // Unknown parcel: leave the servo where it is instead of sending it to bin 1
         servoState = "ERROR";
+        Serial.println("No bin for this parcel - servo not moved");
+        return;
     }
 
     servoState = "MOVING";
