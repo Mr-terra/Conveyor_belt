@@ -1,261 +1,151 @@
-# CMake, Build, Tests and CI/CD
+# Host Build, Tests and CI
 
-This document explains how the build system works with CMake, how to run the tests, and how the CI/CD is configured to generate the artifacts.
+The firmware is built with PlatformIO. CMake builds only the host unit tests: the firmware logic
+compiled for the PC, with the hardware replaced by mocks. This document explains how the build is
+organised, how to run the tests, and what the CI does.
 
-## Table of Contents
-- [CMake, Build, Tests and CI/CD](#cmake-build-tests-and-cicd)
-  - [Table of Contents](#table-of-contents)
-  - [1. Project structure](#1-project-structure)
-  - [2. CMake files](#2-cmake-files)
-    - [2.1. Main CMakeLists.txt file](#21-main-cmakeliststxt-file)
-    - [2.2. CMakeLists.txt file in src/](#22-cmakeliststxt-file-in-src)
-    - [2.3. CMakeLists.txt file in test/](#23-cmakeliststxt-file-in-test)
-  - [3. Building the project](#3-building-the-project)
-    - [3.1. Prerequisites](#31-prerequisites)
-    - [3.2. Build configuration](#32-build-configuration)
-    - [3.3. Compilation](#33-compilation)
-  - [4. Running the tests](#4-running-the-tests)
-    - [4.1. Unit tests](#41-unit-tests)
-    - [4.2. Integration tests](#42-integration-tests)
-  - [5. CI/CD configuration](#5-cicd-configuration)
-    - [5.1. CI workflow file](#51-ci-workflow-file)
-    - [5.2. CI steps](#52-ci-steps)
-    - [5.3. Artifact generation](#53-artifact-generation)
-  - [6. Useful commands](#6-useful-commands)
-
-## 1. Project structure
-
-The project is organized as follows:
+## 1. Layout
 
 ```
-conveyor/
-├── CMakeLists.txt                  # Main CMake configuration
+.
+├── CMakeLists.txt            Top level: C++17, enable_testing(), adds test/ when BUILD_TESTS=ON
+├── platformio.ini            Firmware build (not part of CMake)
+├── include/
+│   ├── hal/                  Hardware interfaces (I2C bus, GRBL, RFID, servo, HTTP, network)
+│   └── *.h                   Module headers
 ├── src/
-│   └── CMakeLists.txt             # CMake configuration for the source code
-├── test/
-│   ├── CMakeLists.txt             # Test dependencies and host test target
-│   ├── host/
-│   │   ├── include/Arduino.h      # Fake Arduino core for the PC build
-│   │   ├── fakes/                 # gMock doubles of the HAL interfaces
-│   │   └── tests/                 # Unit tests (*_test.cpp)
-├── include/                        # Header files
-│   └── hal/                       # Hardware abstraction interfaces
-├── lib/                           # External libraries
-└── workflows/
-    └── ci.yml                     # GitHub Actions CI configuration
+│   ├── hal/firmware/         ESP32 implementations of include/hal/ (firmware only)
+│   └── ...                   Module sources (compiled for the host and the firmware)
+└── test/
+    ├── CMakeLists.txt        Fetches googletest and ArduinoJson, builds firmware_logic and host_tests
+    └── host/
+        ├── include/Arduino.h Fake Arduino core: String, Serial, millis/delay, constrain
+        ├── fakes/hardware_mocks.h   gMock doubles for every interface in include/hal/
+        └── tests/*_test.cpp  One gtest file per module
 ```
 
-## 2. CMake files
+`src/hal/firmware/` is deliberately left out of the host build. It only compiles for the ESP32.
 
-### 2.1. Main CMakeLists.txt file
+## 2. Build options
 
-The `CMakeLists.txt` file at the root of the project configures:
+| Option | Default | Effect |
+|--------|---------|--------|
+| `BUILD_TESTS` | `ON` | Adds `test/` (googletest, the host logic library and `host_tests`) |
 
-- The project name and version
-- The C++ standard used (C++17)
-- The build options (tests, coverage, etc.)
-- The inclusion of the subdirectories (src/, test/)
-- The test configuration with CTest
-- The artifact generation
+There is no firmware option in CMake: the firmware is built with `pio run -e m5stack-grey`.
 
-Example configuration:
+## 3. Dependencies
 
-```cmake
-cmake_minimum_required(VERSION 3.10)
-project(conveyor VERSION 1.0.0 LANGUAGES CXX)
+Fetched at configure time by `FetchContent`; nothing needs to be installed system-wide:
 
-# C++ standard configuration
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+| Dependency | Version | Used for |
+|------------|---------|----------|
+| googletest (with gMock) | 1.14.0 | Test framework and mocks |
+| ArduinoJson | 7.4.3 | JSON parsing in the logic (same major version as the firmware) |
 
-# Build options
-option(BUILD_TESTS "Build tests" ON)
-option(BUILD_COVERAGE "Build with coverage support" OFF)
+You still need CMake 3.14 or newer and a C++17 compiler.
 
-# Add subdirectories
-add_subdirectory(src)
-add_subdirectory(test)
+## 4. Building and running the tests
 
-# Test configuration
-enable_testing()
-include(CTest)
-```
-
-### 2.2. CMakeLists.txt file in src/
-
-This file configures the compilation of the main source code:
-
-- Creation of the main library or executable
-- Addition of the source files
-- Configuration of the include paths
-- Linking with the external libraries
-
-Example:
-
-```cmake
-# Create the main executable
-add_executable(conveyor
-    main.cpp
-    conveyor/conveyor.cpp
-    # ... other source files
-)
-
-# Include paths configuration
-target_include_directories(conveyor PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-)
-
-# Link the libraries
-target_link_libraries(conveyor
-    pthread
-    # ... other libraries
-)
-```
-
-### 2.3. CMakeLists.txt file in test/
-
-This file configures the host build of the firmware logic and the unit tests:
-
-- Fetches googletest 1.14.0 and ArduinoJson 7.4.3 (`FetchContent`, no system install)
-- Builds the firmware logic (`firmware_logic`) for the PC, without the ESP32-only adapters in `src/hal/firmware/`
-- Builds the `host_tests` executable and registers its tests with CTest
-
-Example:
-
-```cmake
-add_library(firmware_logic STATIC ${HOST_LOGIC_SOURCES})
-
-file(GLOB HOST_TEST_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/host/tests/*.cpp
-)
-add_executable(host_tests ${HOST_TEST_SOURCES})
-target_link_libraries(host_tests PRIVATE firmware_logic gmock_main)
-gtest_discover_tests(host_tests)
-```
-
-## 3. Building the project
-
-### 3.1. Prerequisites
-
-To build the project, you need:
-
-- CMake (version 3.10 or higher)
-- A C++17 compiler (GCC, Clang, MSVC)
-- Git (for the dependencies)
-- Make or Ninja (for the compilation)
-
-### 3.2. Build configuration
-
-Create a build directory and configure the project:
-
-```bash
-mkdir build
-cd build
-cmake ..
-```
-
-To enable the tests:
-
-```bash
-cmake -DBUILD_TESTS=ON ..
-```
-
-To enable code coverage:
-
-```bash
-cmake -DBUILD_COVERAGE=ON ..
-```
-
-### 3.3. Compilation
-
-Once configured, build the project:
-
-```bash
-cmake --build .
-```
-
-Or with Make:
-
-```bash
-make
-```
-
-## 4. Running the tests
-
-### 4.1. Unit tests
-
-The unit tests are located in `test/host/tests/`. They run on the PC and replace
-the hardware with the doubles in `test/host/fakes/`.
-
-To run the tests:
-
-```bash
-cd build
-ctest
-```
-
-Or for a specific test:
-
-```bash
-ctest -R ConveyorTest
-```
-
-To build only the tests (firmware disabled, as in CI):
+From the project root:
 
 ```bash
 cmake -S . -B build -DBUILD_TESTS=ON
 cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-### 4.2. Integration tests
+To run a single test:
 
-The integration scenarios (StateManager <-> Scheduler <-> Conveyor) are in
-`test/host/tests/state_manager_test.cpp` and `test/host/tests/scheduler_test.cpp`.
-They run with the unit tests, so there is no separate command.
+```bash
+ctest --test-dir build -R SchedulerTest --output-on-failure
+```
 
-## 5. CI/CD configuration
+On Windows with the Visual Studio generator, add `--config Release` to the build and test commands.
 
-### 5.1. CI workflow file
+### Compiler flags
 
-The `workflows/ci.yml` file configures the continuous integration with GitHub Actions.
+The `firmware_logic` library is compiled with `-Wall -Wextra -Werror`, so warnings in the logic
+fail the build the same way they would on the firmware.
 
-It contains:
+## 5. How the host build compiles the logic
 
-- The triggers (push, pull request)
-- The build and test jobs
-- The artifact generation
-- The deployment
+`test/CMakeLists.txt` lists the logic sources explicitly in `HOST_LOGIC_SOURCES`:
 
-### 5.2. CI steps
+- `firmware_logic` is a static library built from those sources.
+- `host_tests` is the test executable. It links `firmware_logic` and `gmock_main`.
+- `gtest_discover_tests(host_tests)` registers every test with CTest, so each test name shows up
+  as its own line in the CTest output.
 
-The CI performs the following steps:
+The DOLIBARR endpoint and key are set as compile definitions for the host build:
 
-1. **Checkout**: Retrieve the source code
-2. **Install dependencies**: Install CMake, the compiler, etc.
-3. **Configuration**: Run CMake
-4. **Build**: Compile the project
-5. **Tests**: Run the unit and integration tests
-6. **Artifact generation**: Create the binaries and archives
-7. **Artifact upload**: Make the artifacts available
+```cmake
+"DOLIBARR_URL=\"http://localhost/api/index.php\""
+"DOLIBARR_API_KEY=\"test-api-key\""
+```
 
-### 5.3. Artifact generation
+A new module that the logic depends on must be added to `HOST_LOGIC_SOURCES`, or its tests cannot
+link. A new hardware interface needs a mock in `test/host/fakes/hardware_mocks.h`.
 
-The generated artifacts include:
+## 6. Writing a test
 
-- The main executable (`conveyor`)
-- The test executables
-- The coverage reports (if enabled)
-- The build and test logs
+Each test file includes the real module header and the mocks, and drives the module through the
+interfaces only:
 
-## 6. Useful commands
+```cpp
+class ExampleTest : public ::testing::Test {
+protected:
+    NiceMock<MockGrblMotor> motor;   // defaults: every call returns a neutral value
+    NiceMock<MockI2CBus> bus;
+    Conveyor conveyor{10, 500};
+    void SetUp() override { conveyor.setHardware(&motor, &bus); }
+};
 
-| Command | Description |
-|----------|-------------|
-| `cmake ..` | Configure the project |
-| `cmake --build .` | Build the project |
-| `ctest` | Run all the tests |
-| `ctest -V` | Run the tests in verbose mode |
-| `ctest -R test_name` | Run a specific test |
-| `make clean` | Clean the build files |
-| `cmake -DBUILD_TESTS=OFF ..` | Disable the tests |
-| `cmake -DBUILD_COVERAGE=ON ..` | Enable code coverage |
+TEST_F(ExampleTest, AlarmStatusMapsToAlarm) {
+    EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("A")));
+    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM);
+}
+```
+
+Tips taken from this project:
+
+- Use `NiceMock` for devices the test does not care about, so unexpected calls are ignored.
+- Do not combine `ON_CALL` and `EXPECT_CALL` with the same matcher on one mock without care: a
+  `WillOnce` chain is easier to read than two overlapping expectations.
+- Time is controlled with the fake clock: set `hostMillis` before calling a function that reads
+  `millis()`.
+- Critical errors are a global latch. Clear them in `SetUp()` and `TearDown()` so tests do not
+  affect each other.
+
+## 7. Continuous integration
+
+The workflow is `.github/workflows/ci.yml`. It runs on pushes to `main` only, and a newer push
+cancels a run still in progress.
+
+| Job | Steps |
+|-----|-------|
+| **Unit Tests** | Checkout, configure with `-DBUILD_TESTS=ON`, build, `ctest --test-dir build --output-on-failure` |
+| **Firmware Build (PlatformIO)** | Checkout, Python 3.11, cache `~/.platformio` (keyed on `platformio.ini`), install PlatformIO, write `.env` from repository secrets, `pio run -e m5stack-grey`, upload `firmware.bin` as an artifact |
+
+The unit-test job uses the cmake and compiler already on the `ubuntu-latest` runner.
+
+The firmware job needs the repository secrets `DOLIBARR_URL`, `DOLIBARR_API_KEY`, `WIFI_SSID` and
+`WIFI_PASS`. Without them, `env_script.py` stops the build with a message that names the missing
+variable.
+
+The firmware is pinned to `espressif32@6.12.0` (Arduino-ESP32 2.x). Newer platform releases
+ship a 3.x core that does not build the M5Stack library; see `platformio.ini`.
+
+## 8. Useful commands
+
+```bash
+# Reconfigure from scratch
+rm -rf build && cmake -S . -B build -DBUILD_TESTS=ON
+
+# List the tests without running them
+ctest --test-dir build -N
+
+# Firmware
+pio run -e m5stack-grey            # build
+pio run -e m5stack-grey -t clean   # clean
+```
