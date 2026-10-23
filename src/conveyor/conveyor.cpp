@@ -285,9 +285,3 @@ String Conveyor::getState() const
     return _currentState;
 }
 
-void Conveyor::setState(String state)
-{
-    (void)state; // Ignored: the state always comes from the hardware
-    Serial.println("⚠️ WARNING: setState() is deprecated - state is read from hardware");
-    Serial.println("⚠️ Use readHardwareState() instead");
-}

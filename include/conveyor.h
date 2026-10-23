@@ -27,7 +27,6 @@ public:
     bool checkConnection();
 
     String getState() const;
-    void setState(String state);  // DEPRECATED - do not use
 
     void setSpeed(int speed);
     void setMovement(int steps);

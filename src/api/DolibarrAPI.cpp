@@ -63,9 +63,3 @@ boolean DolibarrAPI::checkConnection()
 
     return response.statusCode == 200;
 }
-
-String DolibarrAPI::checkWarehouse(int warehouseId)
-{
-    String url = baseUrl + "/warehouses/" + String(warehouseId);
-    return performGET(url);
-}

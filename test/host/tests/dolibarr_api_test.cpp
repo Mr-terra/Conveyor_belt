@@ -38,15 +38,7 @@ TEST_F(DolibarrApiTest, TransportFailureReturnsEmptyBody)
 {
     ON_CALL(http, get(_, _)).WillByDefault(Return(HttpResponse{-1, String("ignored")}));
 
-    EXPECT_EQ(api.checkWarehouse(3), String(""));
-}
-
-TEST_F(DolibarrApiTest, CheckWarehouseQueriesWarehouseById)
-{
-    EXPECT_CALL(http, get(String("http://dolibarr.local/api/index.php/warehouses/3"), String("secret-key")))
-        .WillOnce(Return(HttpResponse{200, String("{\"id\":3}")}));
-
-    EXPECT_EQ(api.checkWarehouse(3), String("{\"id\":3}"));
+    EXPECT_EQ(api.getProductByBarcode("'041A2B'"), String(""));
 }
 
 TEST_F(DolibarrApiTest, CreateStockMovementSendsValidJson)

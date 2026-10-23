@@ -163,16 +163,6 @@ TEST_F(ConveyorTest, SetMovementChangesStepSize)
     conveyor.move(true);
 }
 
-TEST_F(ConveyorTest, DeprecatedSetStateIsIgnored)
-{
-    EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("I")));
-    conveyor.readHardwareState();
-
-    conveyor.setState(CONVEYOR_STATE_ALARM);
-
-    EXPECT_EQ(conveyor.getState(), CONVEYOR_STATE_STOPPED);
-}
-
 TEST_F(ConveyorTest, CheckConnectionFailsWhenAddressDoesNotAcknowledge)
 {
     EXPECT_CALL(bus, probe(0x70)).WillOnce(Return(2));

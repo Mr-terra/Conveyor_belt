@@ -31,9 +31,6 @@ public:
 
     // Stock
     String createStockMovement(int productId, int warehouseId, int qty);
-
-    // Warehouses
-    String checkWarehouse(int warehouseId);
 };
 
 #endif
