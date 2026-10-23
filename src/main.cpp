@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <M5Stack.h>
 #include <WiFi.h>
+#include <Wire.h>
 #include "conveyor.h"
 #include "scheduler.h"
 #include "check_connect.h"

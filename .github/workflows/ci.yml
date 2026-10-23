@@ -28,49 +28,38 @@ jobs:
       run: ctest --test-dir build --output-on-failure
 
   firmware:
-    name: Firmware Build with CMake
+    name: Firmware Build (PlatformIO)
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential git python3 python3-pip wget tar
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-    - name: Install Arduino ESP32 framework
-      run: |
-        mkdir -p ~/Arduino/hardware/espressif
-        cd ~/Arduino/hardware/espressif
+    - name: Install PlatformIO
+      run: pip install platformio
 
-        # Download the latest stable version
-        # First, find the correct URL
-        LATEST_URL=$(curl -s https://api.github.com/repos/espressif/arduino-esp32/releases/latest | \
-                    grep "browser_download_url.*tar.gz" | \
-                    cut -d '"' -f 4)
-        wget $LATEST_URL -O arduino-esp32.tar.gz
-        tar -xzf arduino-esp32.tar.gz
-        rm arduino-esp32.tar.gz
-        mv arduino-esp32* esp32
-
-    - name: Configure CMake
+    - name: Create .env from repository secrets
+      env:
+        DOLIBARR_URL: ${{ secrets.DOLIBARR_URL }}
+        DOLIBARR_API_KEY: ${{ secrets.DOLIBARR_API_KEY }}
+        WIFI_SSID: ${{ secrets.WIFI_SSID }}
+        WIFI_PASS: ${{ secrets.WIFI_PASS }}
       run: |
-        cmake -S . -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DBUILD_FIRMWARE=ON \
-          -DBUILD_TESTS=OFF \
-          -DARDUINO_PATH=$HOME/Arduino \
-          -DM5STACK_PATH=${{ github.workspace }}/lib/M5Stack_lib \
-          -DGRBL_PATH=${{ github.workspace }}/lib/Module_GRBL_13.2 \
-          -DMFRC522_PATH=${{ github.workspace }}/lib/MFRC522_I2C \
-          -DARDUINOJSON_PATH=${{ github.workspace }}/lib/ArduinoJson
+        {
+          echo "DOLIBARR_URL=$DOLIBARR_URL"
+          echo "DOLIBARR_API_KEY=$DOLIBARR_API_KEY"
+          echo "WIFI_SSID=$WIFI_SSID"
+          echo "WIFI_PASS=$WIFI_PASS"
+        } > .env
 
     - name: Build firmware
-      run: cmake --build build --config Release
+      run: pio run -e m5stack-grey
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: build/firmware.bin
+        path: .pio/build/m5stack-grey/firmware.bin
