@@ -173,7 +173,7 @@ test protocol (`TEST_PROTOCOL.md`).
 
 ## License
 
-No license has been chosen yet. Until one is added, all rights are reserved by the authors.
+Licensed under the [Apache License 2.0](LICENSE).
 
 ## Acknowledgements
 
