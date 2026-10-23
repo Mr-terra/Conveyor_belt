@@ -15,7 +15,7 @@ Developed as part of the Epitech MSc Pro IoT project (T-IOT-911).
 - **Hardware-driven state**: the conveyor state is read from the GRBL module on every cycle. The software never assumes that a command worked.
 - **Error management**: errors are classified (`INFO`, `WARNING`, `CRITICAL`, `FATAL`). A critical error stops the system and stays latched until the operator presses Start (see [Usage](#usage)).
 - **Silent module watchdog**: if the GRBL module gives no status for 10 consecutive reads (1 s), the conveyor is treated as in alarm and a critical error is raised.
-- **Connection checks**: the GRBL motor, the RFID reader and the servo board are probed before production starts. The Dolibarr check is implemented but disabled in the start sequence (see `docs/OVERVIEW.md`).
+- **Connection checks**: the Dolibarr API, the GRBL motor, the RFID reader and the servo board are probed before production starts.
 - **Sorting flow**: RFID read → Dolibarr product lookup → stock movement → servo moved to the matching bin. Parcels that cannot be routed go to the error bin.
 - **Timeouts**: HTTP requests to Dolibarr give up after 5 seconds, so a silent server cannot freeze the controls.
 - **Host unit tests**: the firmware logic runs on a PC with googletest and gMock, without an ESP32.
@@ -93,6 +93,13 @@ The binary is written to `.pio/build/m5stack-grey/firmware.bin`.
 The platform is pinned to `espressif32@6.12.0` in `platformio.ini`. The M5Stack 0.4.6
 library needs the Arduino-ESP32 2.x core; newer platform releases ship a 3.x core that
 does not build it.
+
+## Download a Release
+
+Version tags (`v*`) are published under **Releases** with the compiled image as
+`firmware-<tag>.bin`. The release workflow (`.github/workflows/release.yml`) builds it with the same
+secrets as the CI. Building from source with `pio run -e m5stack-grey -t upload` is the route that
+has been tested.
 
 ## Flash and Monitor
 
@@ -176,8 +183,8 @@ The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_K
 - **Secrets in the binary.** See [Configuration](#configuration).
 - **Initialization is a placeholder.** `InitPosition` logs its steps and returns success; it does
   not load motor parameters or home the sorter yet.
-- **Not yet tested on the hardware.** The servo routing, the watchdog and the error bin are covered
-  by the host tests only.
+- **Not tested on the hardware.** The servo routing, the watchdog and the error bin are covered by
+  the host tests only. The hardware checklist in [TEST_PROTOCOL.md](docs/TEST_PROTOCOL.md) has not been run.
 
 ## Project Structure
 
