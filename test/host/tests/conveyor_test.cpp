@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "conveyor.h"
 #include "error.h"
 #include "state_manager.h"
@@ -79,6 +81,41 @@ TEST_F(ConveyorTest, EmptyStatusFallsBackToLockAndIdleHelpers)
     EXPECT_CALL(motor, inLock()).WillOnce(Return(false));
     EXPECT_CALL(motor, readIdle()).WillOnce(Return(false));
     EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_RUNNING);
+}
+
+TEST_F(ConveyorTest, SilentModuleIsAlarmAfterMissedReplyLimit)
+{
+    EXPECT_CALL(motor, readStatus()).Times(Conveyor::MISSED_REPLIES_LIMIT).WillRepeatedly(Return(String("")));
+
+    for (int i = 1; i < Conveyor::MISSED_REPLIES_LIMIT; i++)
+    {
+        EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_RUNNING) << "read " << i;
+    }
+
+    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM);
+    EXPECT_TRUE(Error::hasCriticalErrors());
+}
+
+TEST_F(ConveyorTest, AnswerResetsTheMissedReplyCount)
+{
+    std::vector<String> replies;
+    for (int i = 0; i < Conveyor::MISSED_REPLIES_LIMIT - 1; i++)
+        replies.push_back("");
+    replies.push_back("I");
+    for (int i = 0; i < Conveyor::MISSED_REPLIES_LIMIT - 1; i++)
+        replies.push_back("");
+
+    ON_CALL(motor, readStatus()).WillByDefault([&replies]() {
+        String reply = replies.front();
+        replies.erase(replies.begin());
+        return reply;
+    });
+
+    for (size_t i = 0; i < replies.size(); i++)
+    {
+        EXPECT_NE(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM) << "read " << i;
+    }
+    EXPECT_FALSE(Error::hasCriticalErrors());
 }
 
 TEST_F(ConveyorTest, MonitorHardwareReadsAtMostEvery100Milliseconds)

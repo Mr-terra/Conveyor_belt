@@ -13,6 +13,9 @@ extern const String CONVEYOR_STATE_ALARM;
 
 class Conveyor {
 public:
+    // Reads, at 100 ms each, without an answer before the module is treated as failed
+    static constexpr int MISSED_REPLIES_LIMIT = 10;
+
     Conveyor(int movement = 1, int speed = 1000);
 
     // Injects the hardware drivers. Must be called before initialize().
@@ -46,6 +49,9 @@ private:
     II2CBus *_bus = nullptr;
     bool _isRunning;
     String _currentState;
+
+    // Consecutive status reads without an answer from the GRBL module
+    int _missedReplies = 0;
 };
 
 #endif

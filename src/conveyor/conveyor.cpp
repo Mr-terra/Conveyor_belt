@@ -139,6 +139,7 @@ String Conveyor::readHardwareState()
 
     if (status.length() > 0)
     {
+        _missedReplies = 0;
         char stateChar = status[0];
 
         // Map GRBL codes to conveyor states
@@ -179,9 +180,20 @@ String Conveyor::readHardwareState()
     }
     else
     {
-        // No response, fall back to the helper functions
-        if (_grbl->inLock())
+        _missedReplies++;
+
+        if (_missedReplies >= MISSED_REPLIES_LIMIT)
         {
+            // Silence for too long: do not assume the belt is still running
+            newState = CONVEYOR_STATE_ALARM;
+            if (_missedReplies == MISSED_REPLIES_LIMIT)
+            {
+                Error::triggerError("GRBL module not responding", ERROR_CRITICAL, "Conveyor");
+            }
+        }
+        else if (_grbl->inLock())
+        {
+            // No response yet, fall back to the helper functions
             newState = CONVEYOR_STATE_ALARM;
         }
         else if (_grbl->readIdle())
