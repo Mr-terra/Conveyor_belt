@@ -42,8 +42,8 @@ target_include_directories(firmware_logic PUBLIC
 target_link_libraries(firmware_logic PUBLIC ArduinoJson)
 
 target_compile_definitions(firmware_logic PUBLIC
-    DOLIBARR_URL="\"http://localhost/api/index.php\""
-    DOLIBARR_API_KEY="\"test-api-key\""
+    "DOLIBARR_URL=\"http://localhost/api/index.php\""
+    "DOLIBARR_API_KEY=\"test-api-key\""
 )
 
 target_compile_options(firmware_logic PRIVATE -Wall -Wextra -Werror)
