@@ -1,5 +1,9 @@
 # TEST PROTOCOL - IOT CONVEYOR BELT PROJECT
 
+> **Note:** this is the manual test protocol from the school project. The automated
+> tests are the host unit tests in `test/host/` (see `CMAKE_BUILD_TESTS.md`). The Python
+> file layout further down is historical and does not match the repository.
+
 ## TABLE OF CONTENTS
 
 1. [Tests per Module](#tests-per-module)
