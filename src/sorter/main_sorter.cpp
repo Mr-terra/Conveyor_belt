@@ -20,15 +20,25 @@ void SorterController::setHardware(IRfidDriver *rfidDriver, IServoDriver *servoD
   servo.setHardware(servoDriver, bus);
 }
 
-static String sorterStateToString(String s)
+String SorterController::stateToString(SorterState s)
 {
-  return s.isEmpty() ? String("") : s;
+  switch (s)
+  {
+  case SorterState::InitProduction:
+    return "INIT_PRODUCTION";
+  case SorterState::Waiting:
+    return "WAITING";
+  case SorterState::RfidRead:
+    return "RFID_READ";
+  case SorterState::RfidReadingError:
+    return "RFID_READING_ERROR";
+  }
+  return "UNKNOWN";
 }
 
-void SorterController::setState(const char *newState)
+void SorterController::setState(SorterState newState)
 {
-  if (sorterState != newState)
-    sorterState = newState;
+  sorterState = newState;
 }
 
 void SorterController::setupStateRules(StateManager &stateManager)
@@ -43,13 +53,13 @@ void SorterController::initialize(StateManager &stateManager)
   rfid.init();
   servo.init(stateManager);
 
-  stateManager.observeState<String>(
+  stateManager.observeState<SorterState>(
       &this->sorterState,
       "SORTER",
-      sorterStateToString);
+      stateToString);
 
   setupStateRules(stateManager);
-  setState("WAITING");
+  setState(SorterState::Waiting);
 
   Serial.println("SorterController ready");
 }
@@ -75,11 +85,11 @@ void SorterController::production()
 
   if (uidRead.isEmpty())
   {
-    setState("WAITING");
+    setState(SorterState::Waiting);
     return;
   }
 
-  setState("RFID_READ");
+  setState(SorterState::RfidRead);
 
   Serial.print("UID: ");
   Serial.println(uidRead);
@@ -89,11 +99,11 @@ void SorterController::production()
   Serial.println((int)bin);
   if (bin == Bin::NONE)
   {
-    setState("RFID_READING_ERROR");
+    setState(SorterState::RfidReadingError);
     Serial.println("Unknown UID");
-    setState("WAITING");
+    setState(SorterState::Waiting);
   }
 
   servo.moveTo(bin);
-  setState("WAITING");
+  setState(SorterState::Waiting);
 }

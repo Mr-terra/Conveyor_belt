@@ -5,6 +5,15 @@
 #include "hal/rfid_driver.h"
 #include "hal/servo_driver.h"
 
+// States of one sorting cycle. SorterController::stateToString() gives the name used by the rules and logs.
+enum class SorterState : uint8_t
+{
+    InitProduction,
+    Waiting,
+    RfidRead,
+    RfidReadingError
+};
+
 class SorterController
 {
 public:
@@ -17,13 +26,13 @@ public:
     // Health check - verifies the whole sorting system
     bool checkConnection();
 
-    void setState(const char *newState);
+    void setState(SorterState newState);
 
 private:
     StateManager *sm = nullptr;
-    String sorterState = "INIT_PRODUCTION";
+    SorterState sorterState = SorterState::InitProduction;
 
-    static String stateToString(String s);
+    static String stateToString(SorterState s);
     static void setupStateRules(StateManager &stateManager);
 };
 

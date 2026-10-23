@@ -5,6 +5,14 @@
 #include "sorter_types.h"
 #include "state_manager.h"
 
+// States of the diverter servo. ServoSorter::stateToString() gives the name used by the rules and logs.
+enum class ServoState : uint8_t
+{
+    Init,
+    Idle,
+    Moving
+};
+
 class ServoSorter
 {
 public:
@@ -24,8 +32,8 @@ private:
     int angleFor(Bin::Id bin) const;
 
     // Observable internal state
-    String servoState = "INIT";
+    ServoState servoState = ServoState::Init;
 
     // Helper for StateManager
-    static String stateToString(String s);
+    static String stateToString(ServoState s);
 };

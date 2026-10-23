@@ -12,9 +12,18 @@ void ServoSorter::setHardware(IServoDriver *driver, II2CBus *bus)
     _bus = bus;
 }
 
-String ServoSorter::stateToString(String s)
+String ServoSorter::stateToString(ServoState s)
 {
-    return s;
+    switch (s)
+    {
+    case ServoState::Init:
+        return "INIT";
+    case ServoState::Idle:
+        return "IDLE";
+    case ServoState::Moving:
+        return "MOVING";
+    }
+    return "UNKNOWN";
 }
 
 void ServoSorter::init(StateManager &stateManager)
@@ -23,16 +32,14 @@ void ServoSorter::init(StateManager &stateManager)
     _driver->writeAngle(SERVO_CHANNEL, init_angle); // neutral
 
     // Observe the servo state
-    stateManager.observeState<String>(
+    stateManager.observeState<ServoState>(
         &servoState,
         "SERVO",
         stateToString);
 
-    // Rules (static, no dynamic rules here)
     stateManager.addStateRule("SERVO", "INIT", "*", ERROR_INFO, "Servo initialized");
-    stateManager.addStateRule("SERVO", "*", "ERROR", ERROR_CRITICAL, "Servo error");
 
-    servoState = "IDLE";
+    servoState = ServoState::Idle;
 }
 
 int ServoSorter::angleFor(Bin::Id bin) const
@@ -70,7 +77,7 @@ void ServoSorter::moveTo(Bin::Id bin)
         bin = Bin::ERROR_BIN;
     }
 
-    servoState = "MOVING";
+    servoState = ServoState::Moving;
 
     uint8_t angle = (uint8_t)angleFor(bin);
 
@@ -79,7 +86,7 @@ void ServoSorter::moveTo(Bin::Id bin)
 
     _driver->writeAngle(SERVO_CHANNEL, angle);
 
-    servoState = "IDLE";
+    servoState = ServoState::Idle;
 }
 
 bool ServoSorter::checkConnection()
