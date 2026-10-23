@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "conveyor.h"
 #include "error.h"
 #include "scheduler.h"
 #include "state_manager.h"
@@ -142,7 +143,9 @@ TEST_F(StateManagerTest, IdleStatesAreNeverReportedAsStuck)
     EXPECT_EQ(countWarnings(), 0);
 }
 
-TEST_F(StateManagerTest, ConveyorAlarmDuringProductionReturnsSchedulerToWaiting)
+// Uses the conveyor's real rules. The CRITICAL and FATAL rules both match
+// RUNNING -> ALARM, so the final state is ERROR (the belt is stopped either way).
+TEST_F(StateManagerTest, ConveyorAlarmDuringProductionEndsInError)
 {
     Scheduler scheduler;
     scheduler.initialize();
@@ -151,12 +154,13 @@ TEST_F(StateManagerTest, ConveyorAlarmDuringProductionReturnsSchedulerToWaiting)
 
     String conveyor = "RUNNING";
     manager.observeState<String>(&conveyor, "Conveyor", identity);
-    manager.addStateRule("Conveyor", "*", "ALARM", ERROR_CRITICAL, "alarm");
+    Conveyor::setupStateRules(manager);
 
     conveyor = "ALARM";
     manager.monitorAllStates();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_TRUE(Error::hasCriticalErrors());
 }
 
 TEST_F(StateManagerTest, FatalConveyorAlarmPutsSchedulerInError)
