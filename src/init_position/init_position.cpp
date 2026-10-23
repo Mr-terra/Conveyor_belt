@@ -15,14 +15,16 @@ bool InitPosition::initializePositions() {
     return paramsOk && positionOk;
 }
 
+// Placeholder: no motor parameters are loaded yet. Returns true so the
+// scheduler's init step can run; replace with a real GRBL configuration.
 bool InitPosition::loadMotorParameters() {
-    // Simulation of loading motor parameters
     Serial.println("Loading motor parameters...");
     return true;
 }
 
+// Placeholder: the sorter is not homed in hardware yet. Returns true so the
+// scheduler's init step can run; replace with a real homing sequence.
 bool InitPosition::initializeSorterPosition() {
-    // Simulation of initializing sorter position
     Serial.println("Initializing sorter position...");
     return true;
 }
