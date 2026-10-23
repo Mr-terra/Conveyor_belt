@@ -103,10 +103,10 @@ TEST_F(StateManagerTest, NoRuleEvaluationWithoutStateChange)
     EXPECT_FALSE(sawMessage("should not fire"));
 }
 
-TEST_F(StateManagerTest, StuckStateWarnsOnceAfterTimeout)
+TEST_F(StateManagerTest, TransitionalStateWarnsOnceAfterTimeout)
 {
-    String state = "RUNNING";
-    manager.observeState<String>(&state, "Motor", identity);
+    String state = "CHECK_CONNECT";
+    manager.observeState<String>(&state, "Scheduler", identity);
 
     hostMillis = 4000;
     manager.monitorAllStates();
@@ -117,10 +117,21 @@ TEST_F(StateManagerTest, StuckStateWarnsOnceAfterTimeout)
     manager.monitorAllStates();
 
     EXPECT_EQ(countWarnings(), 1);
-    EXPECT_TRUE(sawMessage("Motor stuck in state: RUNNING"));
+    EXPECT_TRUE(sawMessage("Scheduler stuck in state: CHECK_CONNECT"));
 }
 
-TEST_F(StateManagerTest, TerminalStatesAreNeverReportedAsStuck)
+TEST_F(StateManagerTest, SteadyOperatingStatesAreNotReportedAsStuck)
+{
+    String state = "RUNNING";
+    manager.observeState<String>(&state, "Conveyor", identity);
+
+    hostMillis = 60000;
+    manager.monitorAllStates();
+
+    EXPECT_EQ(countWarnings(), 0) << "a conveyor running normally is not stuck";
+}
+
+TEST_F(StateManagerTest, IdleStatesAreNeverReportedAsStuck)
 {
     String state = "WAITING";
     manager.observeState<String>(&state, "Scheduler", identity);

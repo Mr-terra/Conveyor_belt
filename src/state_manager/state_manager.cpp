@@ -66,6 +66,13 @@ void StateManager::setScheduler(Scheduler* scheduler)
     Serial.println("✅ StateManager configured with Scheduler reference");
 }
 
+// States a module is expected to stay in for a long time (idle, or running normally)
+static bool isSteadyState(const String &state)
+{
+    return state == "WAITING" || state == "STOPPED" || state == "INITIAL" ||
+           state == "IDLE" || state == "RUNNING" || state == "PRODUCTION";
+}
+
 void StateManager::monitorAllStates()
 {
     unsigned long currentTime = millis();
@@ -100,8 +107,8 @@ void StateManager::monitorAllStates()
                 currentTime - monitor.lastChangeTime > stuckStateTimeout)
             {
 
-                // Only warn about non-terminal states
-                if (currentState != "WAITING" && currentState != "STOPPED" && currentState != "INITIAL")
+                // Only warn about transitional states: steady operating states are expected to last
+                if (!isSteadyState(currentState))
                 {
                     String errorMessage = String(monitor.moduleName) + " stuck in state: " + currentState;
                     Error::triggerError(errorMessage, ERROR_WARNING, monitor.moduleName);
