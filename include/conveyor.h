@@ -7,9 +7,13 @@
 
 class StateManager;
 
-extern const String CONVEYOR_STATE_STOPPED;
-extern const String CONVEYOR_STATE_RUNNING;
-extern const String CONVEYOR_STATE_ALARM;
+// State of the GRBL motor module. Conveyor::stateToString() gives the name used in the logs.
+enum class ConveyorState : uint8_t
+{
+    Stopped,
+    Running,
+    Alarm
+};
 
 class Conveyor {
 public:
@@ -29,17 +33,17 @@ public:
     // Health check - verifies I2C communication with the GRBL module
     bool checkConnection();
 
-    String getState() const;
+    ConveyorState getState() const;
 
     void setSpeed(int speed);
     void setMovement(int steps);
 
     // ✨ KEY FUNCTIONS for automatic monitoring
-    String readHardwareState();     // Reads the state from the GRBL module
+    ConveyorState readHardwareState();     // Reads the state from the GRBL module
     void monitorHardware();         // Call in loop()
     void configureStateMonitoring(StateManager& stateManager);
 
-    static String stateToString(String state);
+    static String stateToString(ConveyorState state);
     static void setupStateRules(StateManager& stateManager);
 
 private:
@@ -48,7 +52,7 @@ private:
     IGrblMotor *_grbl = nullptr;
     II2CBus *_bus = nullptr;
     bool _isRunning;
-    String _currentState;
+    ConveyorState _currentState = ConveyorState::Stopped;
 
     // Consecutive status reads without an answer from the GRBL module
     int _missedReplies = 0;

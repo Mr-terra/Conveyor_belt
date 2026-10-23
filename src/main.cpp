@@ -109,7 +109,7 @@ void updateDisplay()
 
     M5.Lcd.setCursor(10, 130);
     M5.Lcd.print("State: ");
-    M5.Lcd.println(conveyor.getState());
+    M5.Lcd.println(conveyor.stateToString(conveyor.getState()));
 }
 
 void loop()
@@ -163,7 +163,7 @@ void loop()
         M5.Lcd.print("Info: ");
         M5.Lcd.print(scheduler.stateToString(scheduler.getState()));
         M5.Lcd.print(" | Conv: ");
-        M5.Lcd.print(conveyor.getState());
+        M5.Lcd.print(conveyor.stateToString(conveyor.getState()));
         delay(2000); // Show the info for 2 seconds
         updateDisplay(); // Back to the normal display
     }

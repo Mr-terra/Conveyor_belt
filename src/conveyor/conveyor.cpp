@@ -6,10 +6,6 @@
 
 Conveyor conveyor(10, 250);
 
-// States based on the real states of the GRBL module
-const String CONVEYOR_STATE_STOPPED = "STOPPED"; // 'I' (Idle)
-const String CONVEYOR_STATE_RUNNING = "RUNNING"; // Anything other than 'I' or 'A'
-const String CONVEYOR_STATE_ALARM = "ALARM";     // 'A' (Alarm/Lock)
 
 Conveyor::Conveyor(int movement, int speed)
     : _movement(movement), _speed(speed), _isRunning(false)
@@ -26,14 +22,17 @@ void Conveyor::setHardware(IGrblMotor *motor, II2CBus *bus)
     _bus = bus;
 }
 
-String Conveyor::stateToString(String state)
+String Conveyor::stateToString(ConveyorState state)
 {
-    if (state == CONVEYOR_STATE_STOPPED)
+    switch (state)
+    {
+    case ConveyorState::Stopped:
         return "STOPPED";
-    if (state == CONVEYOR_STATE_RUNNING)
+    case ConveyorState::Running:
         return "RUNNING";
-    if (state == CONVEYOR_STATE_ALARM)
+    case ConveyorState::Alarm:
         return "ALARM";
+    }
     return "UNKNOWN";
 }
 
@@ -80,7 +79,7 @@ void Conveyor::initialize(StateManager &stateManager)
 
     Serial.println("✅ Conveyor initialized with Module GRBL 13.2");
     Serial.print("📊 Initial state: ");
-    Serial.println(_currentState);
+    Serial.println(stateToString(_currentState));
 
     configureStateMonitoring(stateManager);
 }
@@ -130,9 +129,9 @@ bool Conveyor::checkConnection()
 }
 
 // ✨ CORE OF THE SYSTEM: reading the state from the hardware
-String Conveyor::readHardwareState()
+ConveyorState Conveyor::readHardwareState()
 {
-    String newState;
+    ConveyorState newState = _currentState;
 
     // Read the module status (returns a String starting with the state code)
     String status = _grbl->readStatus();
@@ -146,11 +145,11 @@ String Conveyor::readHardwareState()
         switch (stateChar)
         {
         case 'I': // Idle
-            newState = CONVEYOR_STATE_STOPPED;
+            newState = ConveyorState::Stopped;
             break;
 
         case 'A': // Alarm (locked)
-            newState = CONVEYOR_STATE_ALARM;
+            newState = ConveyorState::Alarm;
             break;
 
         case 'R': // Run
@@ -159,11 +158,11 @@ String Conveyor::readHardwareState()
         default:  // Any other state = moving or busy
             if (stateChar != 'I' && stateChar != 'A')
             {
-                newState = CONVEYOR_STATE_RUNNING;
+                newState = ConveyorState::Running;
             }
             else
             {
-                newState = CONVEYOR_STATE_STOPPED;
+                newState = ConveyorState::Stopped;
             }
             break;
         }
@@ -185,7 +184,7 @@ String Conveyor::readHardwareState()
         if (_missedReplies >= MISSED_REPLIES_LIMIT)
         {
             // Silence for too long: do not assume the belt is still running
-            newState = CONVEYOR_STATE_ALARM;
+            newState = ConveyorState::Alarm;
             if (_missedReplies == MISSED_REPLIES_LIMIT)
             {
                 Error::triggerError("GRBL module not responding", ERROR_CRITICAL, "Conveyor");
@@ -194,15 +193,15 @@ String Conveyor::readHardwareState()
         else if (_grbl->inLock())
         {
             // No response yet, fall back to the helper functions
-            newState = CONVEYOR_STATE_ALARM;
+            newState = ConveyorState::Alarm;
         }
         else if (_grbl->readIdle())
         {
-            newState = CONVEYOR_STATE_STOPPED;
+            newState = ConveyorState::Stopped;
         }
         else
         {
-            newState = CONVEYOR_STATE_RUNNING;
+            newState = ConveyorState::Running;
         }
     }
 
@@ -210,9 +209,9 @@ String Conveyor::readHardwareState()
     if (newState != _currentState)
     {
         Serial.print("🔄 Hardware state change: ");
-        Serial.print(_currentState);
+        Serial.print(stateToString(_currentState));
         Serial.print(" → ");
-        Serial.println(newState);
+        Serial.println(stateToString(newState));
 
         _currentState = newState; // ← The only place where the state is changed
         // The StateManager will detect this change automatically
@@ -234,7 +233,7 @@ void Conveyor::monitorHardware()
         // ↑ That's ALL! The StateManager rules handle the rest
 
         // Reset the _isRunning flag if the motor is stopped
-        if (_currentState == CONVEYOR_STATE_STOPPED)
+        if (_currentState == ConveyorState::Stopped)
         {
             _isRunning = false;
         }
@@ -292,7 +291,7 @@ void Conveyor::setMovement(int steps)
     _movement = steps;
 }
 
-String Conveyor::getState() const
+ConveyorState Conveyor::getState() const
 {
     return _currentState;
 }

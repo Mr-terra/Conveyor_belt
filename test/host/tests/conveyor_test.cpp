@@ -36,18 +36,17 @@ protected:
 
 TEST_F(ConveyorTest, StateToStringMapsKnownStatesAndFallsBackToUnknown)
 {
-    EXPECT_EQ(Conveyor::stateToString(CONVEYOR_STATE_STOPPED), String("STOPPED"));
-    EXPECT_EQ(Conveyor::stateToString(CONVEYOR_STATE_RUNNING), String("RUNNING"));
-    EXPECT_EQ(Conveyor::stateToString(CONVEYOR_STATE_ALARM), String("ALARM"));
-    EXPECT_EQ(Conveyor::stateToString("garbage"), String("UNKNOWN"));
+    EXPECT_EQ(Conveyor::stateToString(ConveyorState::Stopped), String("STOPPED"));
+    EXPECT_EQ(Conveyor::stateToString(ConveyorState::Running), String("RUNNING"));
+    EXPECT_EQ(Conveyor::stateToString(ConveyorState::Alarm), String("ALARM"));
 }
 
 TEST_F(ConveyorTest, IdleStatusMapsToStopped)
 {
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("I")));
 
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_STOPPED);
-    EXPECT_EQ(conveyor.getState(), CONVEYOR_STATE_STOPPED);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Stopped);
+    EXPECT_EQ(conveyor.getState(), ConveyorState::Stopped);
 }
 
 TEST_F(ConveyorTest, MovingStatusesMapToRunning)
@@ -55,7 +54,7 @@ TEST_F(ConveyorTest, MovingStatusesMapToRunning)
     for (const char *code : {"R", "J", "H", "X"})
     {
         EXPECT_CALL(motor, readStatus()).WillOnce(Return(String(code)));
-        EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_RUNNING) << "code " << code;
+        EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Running) << "code " << code;
     }
 }
 
@@ -63,24 +62,24 @@ TEST_F(ConveyorTest, AlarmStatusMapsToAlarm)
 {
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("A")));
 
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Alarm);
 }
 
 TEST_F(ConveyorTest, EmptyStatusFallsBackToLockAndIdleHelpers)
 {
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("")));
     EXPECT_CALL(motor, inLock()).WillOnce(Return(true));
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Alarm);
 
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("")));
     EXPECT_CALL(motor, inLock()).WillOnce(Return(false));
     EXPECT_CALL(motor, readIdle()).WillOnce(Return(true));
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_STOPPED);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Stopped);
 
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("")));
     EXPECT_CALL(motor, inLock()).WillOnce(Return(false));
     EXPECT_CALL(motor, readIdle()).WillOnce(Return(false));
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_RUNNING);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Running);
 }
 
 TEST_F(ConveyorTest, SilentModuleIsAlarmAfterMissedReplyLimit)
@@ -89,10 +88,10 @@ TEST_F(ConveyorTest, SilentModuleIsAlarmAfterMissedReplyLimit)
 
     for (int i = 1; i < Conveyor::MISSED_REPLIES_LIMIT; i++)
     {
-        EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_RUNNING) << "read " << i;
+        EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Running) << "read " << i;
     }
 
-    EXPECT_EQ(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM);
+    EXPECT_EQ(conveyor.readHardwareState(), ConveyorState::Alarm);
     EXPECT_TRUE(Error::hasCriticalErrors());
 }
 
@@ -113,7 +112,7 @@ TEST_F(ConveyorTest, AnswerResetsTheMissedReplyCount)
 
     for (size_t i = 0; i < replies.size(); i++)
     {
-        EXPECT_NE(conveyor.readHardwareState(), CONVEYOR_STATE_ALARM) << "read " << i;
+        EXPECT_NE(conveyor.readHardwareState(), ConveyorState::Alarm) << "read " << i;
     }
     EXPECT_FALSE(Error::hasCriticalErrors());
 }
@@ -242,7 +241,7 @@ TEST_F(ConveyorTest, InitializeMovesToAlarmWhenHardwareReportsAlarm)
 
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("I")));
     conveyor.initialize(stateManager);
-    ASSERT_EQ(conveyor.getState(), CONVEYOR_STATE_STOPPED);
+    ASSERT_EQ(conveyor.getState(), ConveyorState::Stopped);
 
     EXPECT_CALL(motor, readStatus()).WillOnce(Return(String("A")));
     conveyor.readHardwareState();

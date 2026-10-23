@@ -143,7 +143,7 @@ void Scheduler::executeCurrentState() {
     }
     else if (_current_state == SchedulerState::Production) {
         // Check the conveyor state before continuing
-        if (_conveyor != nullptr && _conveyor->getState() == "ALARM") {
+        if (_conveyor != nullptr && _conveyor->getState() == ConveyorState::Alarm) {
             Serial.println("❌ Conveyor in ALARM state during production - stopping");
             setState(SchedulerState::Waiting);
             return;
@@ -182,7 +182,7 @@ bool Scheduler::canRecoverFromError() {
     }
     
     // Check that the conveyor is not in ALARM
-    if (_conveyor->getState() == "ALARM") {
+    if (_conveyor->getState() == ConveyorState::Alarm) {
         Serial.println("   Cannot recover - conveyor still in ALARM state");
         return false;
     }
