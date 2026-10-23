@@ -94,7 +94,7 @@ void setup()
     M5.Lcd.println("B: Toggle Mode");
     M5.Lcd.setCursor(10, 100);
     M5.Lcd.print("Mode: ");
-    M5.Lcd.println(scheduler.getState());
+    M5.Lcd.println(scheduler.stateToString(scheduler.getState()));
 
     scheduler.triggerStop();
 
@@ -105,7 +105,7 @@ void updateDisplay()
 {
     M5.Lcd.setCursor(10, 100);
     M5.Lcd.print("Mode: ");
-    M5.Lcd.println(scheduler.getState());
+    M5.Lcd.println(scheduler.stateToString(scheduler.getState()));
 
     M5.Lcd.setCursor(10, 130);
     M5.Lcd.print("State: ");
@@ -131,7 +131,7 @@ void loop()
     if (M5.BtnA.wasPressed())
     {
         Serial.println("🔄 Button A pressed - Start Production Sequence");
-        if (scheduler.getState() == STATE_WAITING || scheduler.getState() == STATE_ERROR)
+        if (scheduler.getState() == SchedulerState::Waiting || scheduler.getState() == SchedulerState::Error)
         {
             // Start is the operator's acknowledgement: a latched critical error is cleared here,
             // never by the automatic recovery. The checks run next and stop the system again if needed.
@@ -139,13 +139,13 @@ void loop()
             // Start the full sequence: check → initialization → production
             scheduler.triggerCheckConnect();
         }
-        else if (scheduler.getState() == STATE_PRODUCTION)
+        else if (scheduler.getState() == SchedulerState::Production)
         {
             Serial.println("⚠️  Production already running");
         }
         else
         {
-            Serial.println("⚠️  System busy with " + scheduler.getState() + " - wait or use emergency stop");
+            Serial.println("⚠️  System busy with " + scheduler.stateToString(scheduler.getState()) + " - wait or use emergency stop");
         }
         updateDisplay();
     }

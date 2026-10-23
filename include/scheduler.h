@@ -9,18 +9,21 @@ class InitPosition;
 class SorterController;
 class Conveyor;
 
-// State constants for scheduler
-extern const String STATE_WAITING;
-extern const String STATE_CHECK_CONNECT;
-extern const String STATE_INIT_POSITIONS;
-extern const String STATE_PRODUCTION;
-extern const String STATE_ERROR;
+// States of the scheduler. Scheduler::stateToString() gives the name used on the screen and in the logs.
+enum class SchedulerState : uint8_t
+{
+    Waiting,
+    CheckConnect,
+    InitPositions,
+    Production,
+    Error
+};
 
 class Scheduler {
 public:
     void initialize();
-    void setState(String state);
-    String getState();
+    void setState(SchedulerState state);
+    SchedulerState getState();
     void triggerCheckConnect();
     void triggerInitPositions();
     void triggerProduction();
@@ -38,10 +41,10 @@ public:
     void executeCurrentState();
     
     // State conversion function for automatic monitoring
-    static String stateToString(String state);
+    static String stateToString(SchedulerState state);
 
 private:
-    String _current_state;
+    SchedulerState _current_state = SchedulerState::Waiting;
 
     // Dependencies injected through setDependencies()
     CheckConnect* _checkConnect = nullptr;

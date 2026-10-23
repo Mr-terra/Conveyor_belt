@@ -65,14 +65,14 @@ protected:
 
 TEST_F(SchedulerTest, InitializeStartsInWaiting)
 {
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }
 
 TEST_F(SchedulerTest, TriggerCheckConnectMovesToCheckConnect)
 {
     scheduler.triggerCheckConnect();
 
-    EXPECT_EQ(scheduler.getState(), STATE_CHECK_CONNECT);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::CheckConnect);
 }
 
 TEST_F(SchedulerTest, TriggerCheckConnectWithoutDependenciesGoesToError)
@@ -81,40 +81,40 @@ TEST_F(SchedulerTest, TriggerCheckConnectWithoutDependenciesGoesToError)
 
     scheduler.triggerCheckConnect();
 
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
 }
 
 TEST_F(SchedulerTest, SuccessfulCheckConnectMovesToInitPositions)
 {
-    scheduler.setState(STATE_CHECK_CONNECT);
+    scheduler.setState(SchedulerState::CheckConnect);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_INIT_POSITIONS);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::InitPositions);
 }
 
 TEST_F(SchedulerTest, FailedCheckConnectReturnsToWaiting)
 {
     ON_CALL(bus, probe(0x70)).WillByDefault(Return(2)); // GRBL not acknowledging
-    scheduler.setState(STATE_CHECK_CONNECT);
+    scheduler.setState(SchedulerState::CheckConnect);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }
 
 TEST_F(SchedulerTest, InitPositionsMovesToProduction)
 {
-    scheduler.setState(STATE_INIT_POSITIONS);
+    scheduler.setState(SchedulerState::InitPositions);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_PRODUCTION);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Production);
 }
 
 TEST_F(SchedulerTest, ProductionMovesConveyorForward)
 {
-    scheduler.setState(STATE_PRODUCTION);
+    scheduler.setState(SchedulerState::Production);
 
     EXPECT_CALL(motor, setMotor(10, 0, 0, 500)).Times(1);
     scheduler.executeCurrentState();
@@ -124,66 +124,66 @@ TEST_F(SchedulerTest, ProductionStopsWhenConveyorIsInAlarm)
 {
     ON_CALL(motor, readStatus()).WillByDefault(Return(String("A")));
     conveyor.readHardwareState();
-    scheduler.setState(STATE_PRODUCTION);
+    scheduler.setState(SchedulerState::Production);
 
     EXPECT_CALL(motor, setMotor(_, _, _, _)).Times(0);
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }
 
 TEST_F(SchedulerTest, ErrorStateRecoversWhenConditionsAreMet)
 {
-    scheduler.setState(STATE_ERROR);
+    scheduler.setState(SchedulerState::Error);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }
 
 TEST_F(SchedulerTest, ErrorStateStaysWhenConveyorIsStillInAlarm)
 {
     ON_CALL(motor, readStatus()).WillByDefault(Return(String("A")));
     conveyor.readHardwareState();
-    scheduler.setState(STATE_ERROR);
+    scheduler.setState(SchedulerState::Error);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
 }
 
 TEST_F(SchedulerTest, LatchedCriticalErrorBlocksRecoveryUntilCleared)
 {
     Error::triggerError("overheat", ERROR_CRITICAL, "Conveyor");
-    scheduler.setState(STATE_ERROR);
+    scheduler.setState(SchedulerState::Error);
 
     scheduler.executeCurrentState();
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
 
     Error::clearCriticalErrors();
     scheduler.executeCurrentState();
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
     EXPECT_FALSE(Error::hasCriticalErrors());
 }
 
 TEST_F(SchedulerTest, ErrorStateStaysWhenConnectionsAreBroken)
 {
     ON_CALL(bus, probe(0x70)).WillByDefault(Return(2));
-    scheduler.setState(STATE_ERROR);
+    scheduler.setState(SchedulerState::Error);
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
 }
 
 TEST_F(SchedulerTest, TriggerStopReturnsToWaitingAndStopsConveyor)
 {
-    scheduler.setState(STATE_PRODUCTION);
+    scheduler.setState(SchedulerState::Production);
 
     EXPECT_CALL(motor, setMotor(0, 0, 0, 0)).Times(1);
     scheduler.triggerStop();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }
 
 TEST_F(SchedulerTest, WaitingDoesNotDriveHardware)
@@ -193,5 +193,5 @@ TEST_F(SchedulerTest, WaitingDoesNotDriveHardware)
 
     scheduler.executeCurrentState();
 
-    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Waiting);
 }

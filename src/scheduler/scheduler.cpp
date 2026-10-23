@@ -8,30 +8,27 @@
 Scheduler scheduler;
 
 // State constants for scheduler (now declared in header)
-const String STATE_WAITING = "WAITING";
-const String STATE_CHECK_CONNECT = "CHECK_CONNECT";
-const String STATE_INIT_POSITIONS = "INIT_POSITIONS";
-const String STATE_PRODUCTION = "PRODUCTION";
-const String STATE_ERROR = "ERROR";
-
 // State conversion function for automatic monitoring
-String Scheduler::stateToString(String state)
+String Scheduler::stateToString(SchedulerState state)
 {
-    if (state == STATE_WAITING)
+    switch (state)
+    {
+    case SchedulerState::Waiting:
         return "WAITING";
-    if (state == STATE_CHECK_CONNECT)
+    case SchedulerState::CheckConnect:
         return "CHECK_CONNECT";
-    if (state == STATE_INIT_POSITIONS)
+    case SchedulerState::InitPositions:
         return "INIT_POSITIONS";
-    if (state == STATE_PRODUCTION)
+    case SchedulerState::Production:
         return "PRODUCTION";
-    if (state == STATE_ERROR)
+    case SchedulerState::Error:
         return "ERROR";
+    }
     return "UNKNOWN";
 }
 
 void Scheduler::initialize() {
-    _current_state = STATE_WAITING;
+    _current_state = SchedulerState::Waiting;
     Serial.println("Scheduler initialized. State: WAITING");
 }
 
@@ -47,13 +44,13 @@ void Scheduler::setDependencies(
     _conveyor = conveyor;
 }
 
-void Scheduler::setState(String state) {
+void Scheduler::setState(SchedulerState state) {
     _current_state = state;
     Serial.print("Scheduler state changed to: ");
-    Serial.println(state);
+    Serial.println(stateToString(state));
 }
 
-String Scheduler::getState() {
+SchedulerState Scheduler::getState() {
     return _current_state;
 }
 
@@ -61,35 +58,35 @@ void Scheduler::triggerCheckConnect()
 {
     if (_checkConnect == nullptr) {
         Serial.println("❌ Cannot trigger CHECK_CONNECT: CheckConnect not configured");
-        setState(STATE_ERROR);
+        setState(SchedulerState::Error);
         return;
     }
-    setState(STATE_CHECK_CONNECT);
+    setState(SchedulerState::CheckConnect);
 }
 
 void Scheduler::triggerInitPositions()
 {
     if (_initPosition == nullptr) {
         Serial.println("❌ Cannot trigger INIT_POSITIONS: InitPosition not configured");
-        setState(STATE_ERROR);
+        setState(SchedulerState::Error);
         return;
     }
-    setState(STATE_INIT_POSITIONS);
+    setState(SchedulerState::InitPositions);
 }
 
 void Scheduler::triggerProduction()
 {
     if (_sorterController == nullptr || _conveyor == nullptr) {
         Serial.println("❌ Cannot trigger PRODUCTION: Dependencies not configured");
-        setState(STATE_ERROR);
+        setState(SchedulerState::Error);
         return;
     }
-    setState(STATE_PRODUCTION);
+    setState(SchedulerState::Production);
 }
 
 void Scheduler::triggerStop()
 {
-    setState(STATE_WAITING);
+    setState(SchedulerState::Waiting);
     if (_conveyor != nullptr) {
         _conveyor->stop();
     }
@@ -98,21 +95,21 @@ void Scheduler::triggerStop()
 // Main method that runs the logic of the current state
 void Scheduler::executeCurrentState() {
     // ERROR state is handled first
-    if (_current_state == STATE_ERROR) {
+    if (_current_state == SchedulerState::Error) {
         Serial.println("⚠️  System in ERROR state - checking recovery conditions");
         
         // Check whether we can leave the ERROR state
         if (canRecoverFromError()) {
             Serial.println("🔧 Error conditions resolved - returning to WAITING");
             Error::clearCriticalErrors();
-            setState(STATE_WAITING);
+            setState(SchedulerState::Waiting);
         } else {
             Serial.println("🚫 Still in ERROR state - manual intervention may be required");
         }
         return; // Do not run other states in ERROR mode
     }
     
-    if (_current_state == STATE_CHECK_CONNECT) {
+    if (_current_state == SchedulerState::CheckConnect) {
         Serial.println("🔍 Executing CHECK_CONNECT state");
         if (_checkConnect != nullptr) {
             bool connectionsOk = _checkConnect->checkConnections();
@@ -128,7 +125,7 @@ void Scheduler::executeCurrentState() {
             triggerStop();
         }
     }
-    else if (_current_state == STATE_INIT_POSITIONS) {
+    else if (_current_state == SchedulerState::InitPositions) {
         Serial.println("🔧 Executing INIT_POSITIONS state");
         if (_initPosition != nullptr) {
             bool initOk = _initPosition->initializePositions();
@@ -144,11 +141,11 @@ void Scheduler::executeCurrentState() {
             triggerStop();
         }
     }
-    else if (_current_state == STATE_PRODUCTION) {
+    else if (_current_state == SchedulerState::Production) {
         // Check the conveyor state before continuing
         if (_conveyor != nullptr && _conveyor->getState() == "ALARM") {
             Serial.println("❌ Conveyor in ALARM state during production - stopping");
-            setState(STATE_WAITING);
+            setState(SchedulerState::Waiting);
             return;
         }
         
@@ -159,7 +156,7 @@ void Scheduler::executeCurrentState() {
             _sorterController->production();
         }
     }
-    else if (_current_state == STATE_WAITING) {
+    else if (_current_state == SchedulerState::Waiting) {
         // In the WAITING state, the system is ready but does nothing (no log: runs every tick)
     }
 }

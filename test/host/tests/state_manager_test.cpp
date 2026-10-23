@@ -149,7 +149,7 @@ TEST_F(StateManagerTest, ConveyorAlarmDuringProductionEndsInError)
 {
     Scheduler scheduler;
     scheduler.initialize();
-    scheduler.setState(STATE_PRODUCTION);
+    scheduler.setState(SchedulerState::Production);
     manager.setScheduler(&scheduler);
 
     String conveyor = "RUNNING";
@@ -159,7 +159,7 @@ TEST_F(StateManagerTest, ConveyorAlarmDuringProductionEndsInError)
     conveyor = "ALARM";
     manager.monitorAllStates();
 
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
     EXPECT_TRUE(Error::hasCriticalErrors());
 }
 
@@ -167,7 +167,7 @@ TEST_F(StateManagerTest, FatalConveyorAlarmPutsSchedulerInError)
 {
     Scheduler scheduler;
     scheduler.initialize();
-    scheduler.setState(STATE_PRODUCTION);
+    scheduler.setState(SchedulerState::Production);
     manager.setScheduler(&scheduler);
 
     String conveyor = "RUNNING";
@@ -177,14 +177,14 @@ TEST_F(StateManagerTest, FatalConveyorAlarmPutsSchedulerInError)
     conveyor = "ALARM";
     manager.monitorAllStates();
 
-    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::Error);
 }
 
 TEST_F(StateManagerTest, AlarmOutsideProductionKeepsSchedulerState)
 {
     Scheduler scheduler;
     scheduler.initialize();
-    scheduler.setState(STATE_CHECK_CONNECT);
+    scheduler.setState(SchedulerState::CheckConnect);
     manager.setScheduler(&scheduler);
 
     String conveyor = "RUNNING";
@@ -194,5 +194,5 @@ TEST_F(StateManagerTest, AlarmOutsideProductionKeepsSchedulerState)
     conveyor = "ALARM";
     manager.monitorAllStates();
 
-    EXPECT_EQ(scheduler.getState(), STATE_CHECK_CONNECT);
+    EXPECT_EQ(scheduler.getState(), SchedulerState::CheckConnect);
 }

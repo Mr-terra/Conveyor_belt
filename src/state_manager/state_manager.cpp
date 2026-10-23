@@ -46,15 +46,15 @@ void StateManager::handleCriticalStateChange(String module, String newState, Err
             Serial.println("🚨 Critical conveyor ALARM detected");
             
             // If we are in production, switch to WAITING
-            if (_scheduler->getState() == STATE_PRODUCTION) {
+            if (_scheduler->getState() == SchedulerState::Production) {
                 Serial.println("   Stopping production due to conveyor alarm");
-                _scheduler->setState(STATE_WAITING);
+                _scheduler->setState(SchedulerState::Waiting);
             }
             
             // For fatal errors, switch to ERROR
             if (level == ERROR_FATAL) {
                 Serial.println("   Fatal error - switching to ERROR state");
-                _scheduler->setState(STATE_ERROR);
+                _scheduler->setState(SchedulerState::Error);
             }
         }
     }
