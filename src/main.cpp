@@ -139,8 +139,11 @@ void loop()
     if (M5.BtnA.wasPressed())
     {
         Serial.println("🔄 Button A pressed - Start Production Sequence");
-        if (scheduler.getState() == STATE_WAITING)
+        if (scheduler.getState() == STATE_WAITING || scheduler.getState() == STATE_ERROR)
         {
+            // Start is the operator's acknowledgement: a latched critical error is cleared here,
+            // never by the automatic recovery. The checks run next and stop the system again if needed.
+            Error::clearCriticalErrors();
             // Start the full sequence: check → initialization → production
             scheduler.triggerCheckConnect();
         }
