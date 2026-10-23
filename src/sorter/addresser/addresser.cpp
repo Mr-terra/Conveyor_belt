@@ -55,7 +55,10 @@ Bin::Id Addresser::resolve(const String &uid) const
         // The parcel is diverted even when Dolibarr rejects the movement: the stock
         // count is then wrong, and the error log is the only trace of it.
         if (!_api->createStockMovement(productId, warehouseId, 1))
-            Serial.println("[ERR] Stock movement was not recorded in Dolibarr");
+        {
+            Serial.println("[ERR] Stock movement was not recorded in Dolibarr - sending to the error bin");
+            return Bin::ERROR_BIN;
+        }
         return route.bin;
     }
 

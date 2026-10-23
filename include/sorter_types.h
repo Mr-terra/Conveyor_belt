@@ -12,6 +12,10 @@ public:
         BIN3 = 3
     };
 
+    // Parcels that cannot be routed (unknown card, failed lookup, failed stock
+    // movement) go to this bin. It is the same physical bin as BIN1.
+    static constexpr Id ERROR_BIN = BIN1;
+
     static const char *toString(Id id)
     {
         switch (id)

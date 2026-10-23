@@ -98,7 +98,7 @@ TEST_F(SorterControllerTest, ProductionSortsCardToItsWarehouseBin)
     sorterController.production();
 }
 
-TEST_F(SorterControllerTest, ProductionWithUnknownCardDoesNotMoveServo)
+TEST_F(SorterControllerTest, ProductionWithUnknownCardSendsItToErrorBin)
 {
     ON_CALL(rfid, isNewCardPresent()).WillByDefault(Return(true));
     ON_CALL(rfid, readCardSerial()).WillByDefault(Return(true));
@@ -109,7 +109,7 @@ TEST_F(SorterControllerTest, ProductionWithUnknownCardDoesNotMoveServo)
         });
     ON_CALL(http, get(_, _)).WillByDefault(Return(HttpResponse{200, String("[]")}));
 
-    EXPECT_CALL(servo, writeAngle(_, _)).Times(0);
+    EXPECT_CALL(servo, writeAngle(0, 0)).Times(1); // error bin = BIN1
 
     sorterController.production();
 }
