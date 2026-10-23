@@ -20,6 +20,9 @@ set(MFRC522_PATH "${CMAKE_SOURCE_DIR}/lib/MFRC522_I2C")
 set(ARDUINOJSON_PATH "${CMAKE_SOURCE_DIR}/lib/ArduinoJson")
 
 # Subdirectory configuration
+# Must be called from the top-level project for ctest to find the tests
+enable_testing()
+
 if(BUILD_FIRMWARE)
     add_subdirectory(src)
 endif()

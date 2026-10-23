@@ -1,5 +1,3 @@
-enable_testing()
-
 include(FetchContent)
 
 # Test dependencies, fetched at configure time (no system install needed)
