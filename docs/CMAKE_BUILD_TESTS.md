@@ -103,7 +103,6 @@ add_executable(conveyor
 # Include paths configuration
 target_include_directories(conveyor PRIVATE
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/lib/M5Stack_lib/src
 )
 
 # Link the libraries
