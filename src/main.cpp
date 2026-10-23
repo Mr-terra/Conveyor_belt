@@ -10,6 +10,7 @@
 #include "dolibarr_api.h"
 #include "addresser.h"
 #include "globals.h"
+#include "hal/firmware_hal.h"
 
 #ifndef WIFI_SSID
 #error "WIFI_SSID not defined"
@@ -45,6 +46,8 @@ void setup()
     Wire.begin(21, 22);
     Wire.setClock(400000);
     M5.begin();
+
+    bindFirmwareHardware();
 
     conveyor.initialize(stateManager);
     sorterController.initialize(stateManager);

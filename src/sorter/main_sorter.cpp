@@ -1,7 +1,6 @@
 #include "main_sorter.h"
 
 #include <Arduino.h>
-#include <M5Stack.h>
 
 #include "sorter_types.h"
 #include "reader.h"
@@ -15,10 +14,15 @@ static ServoSorter servo;
 
 SorterController sorterController;
 
-// ✅ REAL signature used by StateManager.cpp (String*)
-static String sorterStateToStringPtr(String *s)
+void SorterController::setHardware(IRfidDriver *rfidDriver, IServoDriver *servoDriver, II2CBus *bus)
 {
-  return (s && s->length()) ? *s : String("");
+  rfid.setHardware(rfidDriver, bus);
+  servo.setHardware(servoDriver, bus);
+}
+
+static String sorterStateToString(String s)
+{
+  return s.isEmpty() ? String("") : s;
 }
 
 void SorterController::setState(const char *newState)
@@ -42,7 +46,7 @@ void SorterController::initialize(StateManager &stateManager)
   stateManager.observeState<String>(
       &this->sorterState,
       "SORTER",
-      reinterpret_cast<String (*)(String)>(sorterStateToStringPtr));
+      sorterStateToString);
 
   setupStateRules(stateManager);
   setState("WAITING");
@@ -52,8 +56,8 @@ void SorterController::initialize(StateManager &stateManager)
 
 bool SorterController::checkConnection()
 {
-  bool rfidOk = RFIDReader::checkConnection();
-  bool servoOk = ServoSorter::checkConnection();
+  bool rfidOk = rfid.checkConnection();
+  bool servoOk = servo.checkConnection();
 
   if (rfidOk && servoOk)
   {

@@ -11,13 +11,19 @@ const String CONVEYOR_STATE_STOPPED = "STOPPED"; // 'I' (Idle)
 const String CONVEYOR_STATE_RUNNING = "RUNNING"; // Anything other than 'I' or 'A'
 const String CONVEYOR_STATE_ALARM = "ALARM";     // 'A' (Alarm/Lock)
 
-Conveyor::Conveyor(int movement, int speed, uint8_t i2cAddress)
-    : _movement(movement), _speed(speed), _grbl(i2cAddress), _i2cAddress(i2cAddress), _isRunning(false)
+Conveyor::Conveyor(int movement, int speed)
+    : _movement(movement), _speed(speed), _isRunning(false)
 {
     if (_speed > 1000)
     {
         _speed = 1000;
     }
+}
+
+void Conveyor::setHardware(IGrblMotor *motor, II2CBus *bus)
+{
+    _grbl = motor;
+    _bus = bus;
 }
 
 String Conveyor::stateToString(String state)
@@ -50,26 +56,24 @@ void Conveyor::configureStateMonitoring(StateManager &stateManager)
 
 void Conveyor::initialize(StateManager &stateManager)
 {
-    M5.begin();
-
     // Initialize the GRBL module
-    _grbl.Init(&Wire);
-    _grbl.setMode("distance");
+    _grbl->init();
+    _grbl->setMode("distance");
 
     // Clear the buffer
-    _grbl.readClean();
+    _grbl->readClean();
 
     // Unlock if needed
-    if (_grbl.inLock())
+    if (_grbl->inLock())
     {
         Serial.println("⚠️ Module locked, unlocking...");
-        _grbl.unLock();
+        _grbl->unLock();
         delay(100);
     }
 
     // Stop the motor at startup
-    _grbl.setMotor(0, 0, 0, 0);
-    _grbl.waitIdle();
+    _grbl->setMotor(0, 0, 0, 0);
+    _grbl->waitIdle();
 
     // Read the initial state from the hardware
     readHardwareState();
@@ -84,11 +88,9 @@ void Conveyor::initialize(StateManager &stateManager)
 bool Conveyor::checkConnection()
 {
     // Robust check: test I2C communication with the GRBL module
-    Wire.begin();
 
     // Step 1: basic check of the I2C address
-    Wire.beginTransmission(CONVEYOR_ADDR); // Default GRBL address
-    byte error = Wire.endTransmission();
+    byte error = _bus->probe(CONVEYOR_ADDR); // Default GRBL address
 
     if (error != 0)
     {
@@ -102,7 +104,7 @@ bool Conveyor::checkConnection()
     }
 
     // Step 2: check that the module responds to commands
-    String status = _grbl.readStatus();
+    String status = _grbl->readStatus();
 
     if (status.length() == 0)
     {
@@ -114,7 +116,7 @@ bool Conveyor::checkConnection()
     }
 
     // Step 3: check that the module is not in an error state
-    if (_grbl.inLock())
+    if (_grbl->inLock())
     {
         Serial.println("❌ GRBL Motor is in LOCK/ALARM state");
         Serial.println("   Module needs to be unlocked before use");
@@ -133,7 +135,7 @@ String Conveyor::readHardwareState()
     String newState;
 
     // Read the module status (returns a String starting with the state code)
-    String status = _grbl.readStatus();
+    String status = _grbl->readStatus();
 
     if (status.length() > 0)
     {
@@ -178,11 +180,11 @@ String Conveyor::readHardwareState()
     else
     {
         // No response, fall back to the helper functions
-        if (_grbl.inLock())
+        if (_grbl->inLock())
         {
             newState = CONVEYOR_STATE_ALARM;
         }
-        else if (_grbl.readIdle())
+        else if (_grbl->readIdle())
         {
             newState = CONVEYOR_STATE_STOPPED;
         }
@@ -233,10 +235,10 @@ void Conveyor::monitorHardware()
 void Conveyor::start()
 {
     // Unlock if needed
-    if (_grbl.inLock())
+    if (_grbl->inLock())
     {
         Serial.println("🔓 Unlocking module...");
-        _grbl.unLock();
+        _grbl->unLock();
         delay(100);
     }
 
@@ -247,8 +249,8 @@ void Conveyor::start()
 
 void Conveyor::stop()
 {
-    _grbl.setMotor(0, 0, 0, 0);
-    _grbl.waitIdle(); // Wait until the motor has really stopped
+    _grbl->setMotor(0, 0, 0, 0);
+    _grbl->waitIdle(); // Wait until the motor has really stopped
     _isRunning = false;
     Serial.println("🛑 Conveyor stop command sent");
     // The state will switch to STOPPED automatically via readHardwareState()
@@ -264,7 +266,7 @@ void Conveyor::move(bool forward)
     // Increase the _movement value for a visible movement
     int angle = forward ? _movement : -_movement;
 
-    _grbl.setMotor(angle, 0, 0, _speed);
+    _grbl->setMotor(angle, 0, 0, _speed);
 
     Serial.print("Moving: angle=");
     Serial.print(angle);
@@ -290,6 +292,7 @@ String Conveyor::getState() const
 
 void Conveyor::setState(String state)
 {
+    (void)state; // Ignored: the state always comes from the hardware
     Serial.println("⚠️ WARNING: setState() is deprecated - state is read from hardware");
     Serial.println("⚠️ Use readHardwareState() instead");
 }

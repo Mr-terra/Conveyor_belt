@@ -6,42 +6,22 @@ DolibarrAPI::DolibarrAPI(String url, String key)
     apiKey = key;
 }
 
+void DolibarrAPI::setTransport(IHttpClient *http, INetwork *network)
+{
+    _http = http;
+    _network = network;
+}
+
 String DolibarrAPI::performGET(String url)
 {
-    HTTPClient http;
-    http.begin(url);
-    http.addHeader("DOLAPIKEY", apiKey);
-
-    int httpCode = http.GET();
-    String response = "";
-
-    if (httpCode > 0)
-    {
-        response = http.getString();
-    }
-
-    http.end();
-    return response;
+    HttpResponse response = _http->get(url, apiKey);
+    return response.statusCode > 0 ? response.body : String("");
 }
 
 String DolibarrAPI::performPOST(String url, String body)
 {
-    HTTPClient http;
-    http.begin(url);
-
-    http.addHeader("Content-Type", "application/json");
-    http.addHeader("DOLAPIKEY", apiKey);
-
-    int httpCode = http.POST(body);
-    String response = "";
-
-    if (httpCode > 0)
-    {
-        response = http.getString();
-    }
-
-    http.end();
-    return response;
+    HttpResponse response = _http->post(url, apiKey, body);
+    return response.statusCode > 0 ? response.body : String("");
 }
 
 String DolibarrAPI::getProductByBarcode(String barcode)
@@ -57,7 +37,7 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
     String body = "{";
     body += "\"product_id\":" + String(productId) + ",";
     body += "\"warehouse_id\":" + String(warehouseId) + ",";
-    body += "\"qty\":" + String(qty) + ",";
+    body += "\"qty\":" + String(qty);
     body += "}";
 
     return performPOST(url, body);
@@ -65,38 +45,26 @@ String DolibarrAPI::createStockMovement(int productId, int warehouseId, int qty)
 
 boolean DolibarrAPI::checkConnection()
 {
-    if (WiFi.status() != WL_CONNECTED)
+    if (!_network->isConnected())
         return false;
 
-    WiFiClient client;
-    HTTPClient http;
     String url = baseUrl + "/users/info";
 
     Serial.print("URL: ");
     Serial.println(url);
     Serial.print("ESP32 IP: ");
-    Serial.println(WiFi.localIP());
+    Serial.println(_network->localIp());
     Serial.print("Gateway: ");
-    Serial.println(WiFi.gatewayIP());
-
-    // http.setTimeout(8000);
-    // Serial.print("http.begin: ");
-    // Serial.print(http.begin(client, url));
-
-    if (!http.begin(client, url))
-        return false;
+    Serial.println(_network->gatewayIp());
 
     Serial.print("apiKey: ");
     Serial.print(apiKey);
 
-    http.addHeader("DOLAPIKEY", apiKey);
-    int httpCode = http.GET();
+    HttpResponse response = _http->get(url, apiKey);
     Serial.print(" http.GET(): ");
-    Serial.print(httpCode);
+    Serial.print(response.statusCode);
 
-    http.end();
-
-    return httpCode == 200;
+    return response.statusCode == 200;
 }
 
 String DolibarrAPI::checkWarehouse(int warehouseId)

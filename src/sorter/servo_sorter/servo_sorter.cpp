@@ -1,10 +1,16 @@
 #include "servo_sorter.h"
-#include <M5Stack.h>
-#include "GoPlus2.h"
 
-static GoPlus2 goPlus;
+// Servo channel on the GoPlus2 board and I2C address of the board
+static const uint8_t SERVO_CHANNEL = 0;
+static const uint8_t GOPLUS_ADDR = 0x38;
 
-int init_angle = 30;
+static int init_angle = 30;
+
+void ServoSorter::setHardware(IServoDriver *driver, II2CBus *bus)
+{
+    _driver = driver;
+    _bus = bus;
+}
 
 String ServoSorter::stateToString(String s)
 {
@@ -13,8 +19,8 @@ String ServoSorter::stateToString(String s)
 
 void ServoSorter::init(StateManager &stateManager)
 {
-    goPlus.begin();
-    goPlus.Servo_write_angle(SERVO_NUM0, init_angle); // neutre
+    _driver->begin();
+    _driver->writeAngle(SERVO_CHANNEL, init_angle); // neutral
 
     // Observe the servo state
     stateManager.observeState<String>(
@@ -32,7 +38,7 @@ void ServoSorter::init(StateManager &stateManager)
 int ServoSorter::angleFor(Bin::Id bin) const
 {
     Serial.print("angleFor() bin=");
-    Serial.println((int)bin + "\n");
+    Serial.println((int)bin);
 
     switch (bin)
     {
@@ -69,15 +75,14 @@ void ServoSorter::moveTo(Bin::Id bin)
     Serial.print("Servo moved to angle: ");
     Serial.println(angle);
 
-    goPlus.Servo_write_angle(SERVO_NUM0, angle);
+    _driver->writeAngle(SERVO_CHANNEL, angle);
 
     servoState = "IDLE";
 }
 
 bool ServoSorter::checkConnection()
 {
-    Wire.beginTransmission(GOPLUS_ADDR);
-    byte error = Wire.endTransmission();
+    uint8_t error = _bus->probe(GOPLUS_ADDR);
 
     if (error == 0)
     {

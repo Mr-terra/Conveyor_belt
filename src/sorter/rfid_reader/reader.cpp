@@ -1,59 +1,59 @@
 #include "reader.h"
-#include <Wire.h>
-#include <MFRC522_I2C.h>
 
 #define RFID_ADDR 0x28
-#define RST_PIN 33
 
-static MFRC522_I2C mfrc522(RFID_ADDR, RST_PIN);
 static uint32_t lastTriggerMs = 0;
 static const uint32_t COOLDOWN_MS = 1500;
 
+void RFIDReader::setHardware(IRfidDriver *driver, II2CBus *bus)
+{
+    _driver = driver;
+    _bus = bus;
+}
+
 void RFIDReader::init()
 {
-    Wire.begin(21, 22);
-    mfrc522.PCD_Init();
+    _driver->init();
 }
 
 String RFIDReader::readUid()
 {
-    if (!mfrc522.PICC_IsNewCardPresent())
+    if (!_driver->isNewCardPresent())
         return "";
-    if (!mfrc522.PICC_ReadCardSerial())
+    if (!_driver->readCardSerial())
         return "";
 
     uint32_t now = millis();
     if (now - lastTriggerMs < COOLDOWN_MS)
     {
-        mfrc522.PICC_HaltA();
-        mfrc522.PCD_StopCrypto1();
+        _driver->halt();
         return "";
     }
     lastTriggerMs = now;
 
+    uint8_t uidBytes[10];
+    uint8_t size = _driver->uidBytes(uidBytes, sizeof(uidBytes));
+
     String uid;
-    for (byte i = 0; i < mfrc522.uid.size; i++)
+    for (uint8_t i = 0; i < size; i++)
     {
-        if (mfrc522.uid.uidByte[i] < 0x10)
+        if (uidBytes[i] < 0x10)
             uid += "0";
-        uid += String(mfrc522.uid.uidByte[i], HEX);
-        if (i < mfrc522.uid.size - 1)
+        uid += String(uidBytes[i], HEX);
+        if (i < size - 1)
             uid += ":";
     }
     uid.toUpperCase();
 
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
+    _driver->halt();
     return uid;
 }
 
 bool RFIDReader::checkConnection()
 {
-    // Simple check: scan the I2C address of the RFID module
-    Wire.begin(21, 22);
-    Wire.beginTransmission(RFID_ADDR);
-    byte error = Wire.endTransmission();
-    
+    // Simple check: probe the I2C address of the RFID module
+    uint8_t error = _bus->probe(RFID_ADDR);
+
     if (error == 0) {
         Serial.println("✅ RFID I2C detected at 0x28");
         return true;

@@ -69,7 +69,7 @@ int Addresser::extractWarehouseId(const String &json) const
 {
     DynamicJsonDocument doc(4096);
 
-    DeserializationError error = deserializeJson(doc, json);
+    DeserializationError error = deserializeJson(doc, json.c_str());
 
     if (error)
     {
@@ -100,7 +100,7 @@ int Addresser::extractProductId(const String &json) const
 {
     DynamicJsonDocument doc(4096);
 
-    DeserializationError error = deserializeJson(doc, json);
+    DeserializationError error = deserializeJson(doc, json.c_str());
     if (error)
     {
         Serial.print("JSON parse failed: ");

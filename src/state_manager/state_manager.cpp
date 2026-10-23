@@ -71,9 +71,8 @@ void StateManager::monitorAllStates()
     unsigned long currentTime = millis();
     for (StateMonitor &monitor : stateMonitors)
     {
-        // 1. Read the current state through the pointer
-        String *statePtr = static_cast<String *>(monitor.stateVariable);
-        String currentState = monitor.stateToString(statePtr);
+        // 1. Read the current state through the monitor
+        String currentState = monitor.readState();
 
         // 2. Compare with the previous state
         if (currentState != monitor.previousState)

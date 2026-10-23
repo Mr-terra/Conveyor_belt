@@ -41,9 +41,8 @@ private:
     
     // State monitoring structures - pure data
     struct StateMonitor {
-        void* stateVariable;
+        std::function<String()> readState; // Returns the formatted current state
         String moduleName;
-        String (*stateToString)(void*);
         String previousState;
         unsigned long lastChangeTime;
         bool isStuckWarningGiven;
@@ -64,13 +63,10 @@ private:
 // Template implementations MUST be in header file
 template<typename T>
 void StateManager::addStateMonitor(T* stateVariable, String moduleName, String (*stateToString)(T)) {
-    String (*castedFunc)(void*) = reinterpret_cast<String (*)(void*)>(stateToString);
-    
     StateMonitor monitor;
-    monitor.stateVariable = stateVariable;
+    monitor.readState = [stateVariable, stateToString]() { return stateToString(*stateVariable); };
     monitor.moduleName = moduleName;
-    monitor.stateToString = castedFunc;
-    monitor.previousState = stateToString(*stateVariable);
+    monitor.previousState = monitor.readState();
     monitor.lastChangeTime = millis();
     monitor.isStuckWarningGiven = false;
     
