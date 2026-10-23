@@ -118,9 +118,6 @@ void Scheduler::executeCurrentState() {
             bool connectionsOk = _checkConnect->checkConnections();
             if (connectionsOk) {
                 Serial.println("✅ Connections OK - transitioning to INIT_POSITIONS");
-                // The hardware answers again, so errors latched before the restart no longer apply.
-                // Without this, nothing clears the latch and ERROR can never be left.
-                Error::clearCriticalErrors();
                 triggerInitPositions();
             } else {
                 Serial.println("❌ Connection check failed - returning to WAITING");

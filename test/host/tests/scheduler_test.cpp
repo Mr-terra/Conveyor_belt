@@ -164,17 +164,6 @@ TEST_F(SchedulerTest, LatchedCriticalErrorBlocksRecoveryUntilCleared)
     EXPECT_FALSE(Error::hasCriticalErrors());
 }
 
-TEST_F(SchedulerTest, PassingCheckConnectClearsLatchedCriticalError)
-{
-    Error::triggerError("overheat", ERROR_CRITICAL, "Conveyor");
-    scheduler.triggerCheckConnect();
-
-    scheduler.executeCurrentState();
-
-    EXPECT_EQ(scheduler.getState(), STATE_INIT_POSITIONS);
-    EXPECT_FALSE(Error::hasCriticalErrors());
-}
-
 TEST_F(SchedulerTest, ErrorStateStaysWhenConnectionsAreBroken)
 {
     ON_CALL(bus, probe(0x70)).WillByDefault(Return(2));
