@@ -19,10 +19,10 @@ def load_env_file(path=".env"):
             os.environ[key] = val
 
 
-# Charger le .env
+# Load the .env file
 load_env_file(os.path.join(env["PROJECT_DIR"], ".env"))
 
-# Récupération des variables
+# Read the variables
 required_vars = [
     "DOLIBARR_URL",
     "DOLIBARR_API_KEY",
@@ -43,7 +43,7 @@ print("[env_script] Loaded variables:")
 for var in required_vars:
     print(f"  - {var}: OK")
 
-# Injection dans le compilateur
+# Inject into the compiler
 env.Append(
     CPPDEFINES=[
         ("DOLIBARR_URL", f'\\"{os.getenv("DOLIBARR_URL")}\\"'),

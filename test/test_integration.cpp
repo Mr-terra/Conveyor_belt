@@ -1,68 +1,68 @@
-// Test d'intégration StateManager <-> Scheduler
-// Ce fichier démontre le fonctionnement de l'intégration
+// Integration test StateManager <-> Scheduler
+// This file demonstrates how the integration works
 
 #include <Arduino.h>
 #include "state_manager.h"
 #include "scheduler.h"
 #include "conveyor.h"
 
-// Simulation des états pour le test
+// Simulated states for the test
 void testConveyorAlarmDuringProduction() {
-    Serial.println("=== Test 1: Conveyor ALARM pendant production ===");
-    
-    // Initialisation
+    Serial.println("=== Test 1: Conveyor ALARM during production ===");
+
+    // Initialization
     scheduler.initialize();
     stateManager.setScheduler(&scheduler);
-    
-    // Simuler le passage en production
+
+    // Simulate switching to production
     scheduler.setState(STATE_PRODUCTION);
-    Serial.print("État initial: ");
+    Serial.print("Initial state: ");
     Serial.println(scheduler.getState());
-    
-    // Simuler une alarme conveyor
-    // Dans la réalité, cela serait déclenché par le hardware
-    // Ici, nous simulons le changement d'état
+
+    // Simulate a conveyor alarm
+    // In reality, this would be triggered by the hardware
+    // Here, we simulate the state change
     Serial.println("Simulating conveyor ALARM...");
-    
-    // Le StateManager devrait détecter cela et agir
-    // (Dans la réalité, cela se fait via monitorAllStates())
-    
+
+    // The StateManager should detect this and act
+    // (In reality, this happens through monitorAllStates())
+
     Serial.println("Expected: Scheduler should return to WAITING state");
     Serial.println("Test completed\n");
 }
 
 void testErrorStateRecovery() {
-    Serial.println("=== Test 2: Récupération de l'état ERROR ===");
-    
-    // Mettre en état ERROR
+    Serial.println("=== Test 2: ERROR state recovery ===");
+
+    // Put the system in ERROR state
     scheduler.setState(STATE_ERROR);
-    Serial.print("État initial: ");
+    Serial.print("Initial state: ");
     Serial.println(scheduler.getState());
-    
-    // Exécuter l'état courant (devrait vérifier les conditions de récupération)
+
+    // Run the current state (should check the recovery conditions)
     scheduler.executeCurrentState();
-    
+
     Serial.println("Expected: Should check recovery conditions");
     Serial.println("If conditions met, should return to WAITING");
     Serial.println("Test completed\n");
 }
 
 void testStateTransitions() {
-    Serial.println("=== Test 3: Transitions d'états normales ===");
-    
-    // Test des transitions normales
+    Serial.println("=== Test 3: Normal state transitions ===");
+
+    // Test the normal transitions
     scheduler.setState(STATE_WAITING);
     Serial.print("WAITING -> ");
-    
+
     scheduler.setState(STATE_CHECK_CONNECT);
     Serial.print("CHECK_CONNECT -> ");
-    
+
     scheduler.setState(STATE_INIT_POSITIONS);
     Serial.print("INIT_POSITIONS -> ");
-    
+
     scheduler.setState(STATE_PRODUCTION);
     Serial.println("PRODUCTION");
-    
+
     Serial.println("All transitions completed successfully");
     Serial.println("Test completed\n");
 }
@@ -70,13 +70,13 @@ void testStateTransitions() {
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    
+
     Serial.println("🧪 Starting Integration Tests\n");
-    
+
     testStateTransitions();
     testConveyorAlarmDuringProduction();
     testErrorStateRecovery();
-    
+
     Serial.println("✅ All tests completed");
 }
 

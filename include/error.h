@@ -4,10 +4,10 @@
 #include <Arduino.h>
 
 enum ErrorLevel {
-    ERROR_INFO,      // Information/avertissement
-    ERROR_WARNING,   // Avertissement non critique
-    ERROR_CRITICAL,  // Erreur critique
-    ERROR_FATAL      // Erreur fatale
+    ERROR_INFO,      // Information/notice
+    ERROR_WARNING,   // Non-critical warning
+    ERROR_CRITICAL,  // Critical error
+    ERROR_FATAL      // Fatal error
 };
 
 class Error {

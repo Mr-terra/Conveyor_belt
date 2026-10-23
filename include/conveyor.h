@@ -20,18 +20,18 @@ public:
     void stop();
     void move(bool forward = true);
     
-    // Health check - vérifie la communication I2C avec le module GRBL
+    // Health check - verifies I2C communication with the GRBL module
     bool checkConnection();
-    
+
     String getState() const;
-    void setState(String state);  // DEPRECATED - ne pas utiliser
+    void setState(String state);  // DEPRECATED - do not use
     
     void setSpeed(int speed);
     void setMovement(int steps);
     
-    // ✨ FONCTIONS CLÉS pour monitoring automatique
-    String readHardwareState();     // Lit l'état depuis le module GRBL
-    void monitorHardware();         // À appeler dans loop()
+    // ✨ KEY FUNCTIONS for automatic monitoring
+    String readHardwareState();     // Reads the state from the GRBL module
+    void monitorHardware();         // Call in loop()
     void configureStateMonitoring(StateManager& stateManager);
     
     static String stateToString(String state);

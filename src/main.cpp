@@ -8,7 +8,7 @@
 #include "main_sorter.h"
 #include "error.h"
 #include "dolibarr_api.h"
-#include "adresser.h"
+#include "addresser.h"
 #include "globals.h"
 
 #ifndef WIFI_SSID
@@ -50,8 +50,8 @@ void setup()
     sorterController.initialize(stateManager);
     scheduler.initialize();
     initPosition.initialize();
-    adresser.setDolibarrAPI(&dolibarrApi);
-    Serial.printf("[SETUP] &adresser=%p  &dolibarrApi=%p\n", (void *)&adresser, (void *)&dolibarrApi);
+    addresser.setDolibarrAPI(&dolibarrApi);
+    Serial.printf("[SETUP] &addresser=%p  &dolibarrApi=%p\n", (void *)&addresser, (void *)&dolibarrApi);
 
     // 1) WiFi
     WiFi.mode(WIFI_STA);
@@ -67,7 +67,7 @@ void setup()
         Serial.println(WiFi.localIP());
     }
 
-    // 2) Injecte TOUTES les deps AVANT d'initialiser le scheduler
+    // 2) Inject ALL dependencies BEFORE initializing the scheduler
     checkConnect.setDolibarrAPI(&dolibarrApi);
     checkConnect.setConveyor(&conveyor);
     checkConnect.setSorterController(&sorterController);
@@ -114,7 +114,7 @@ void loop()
     conveyor.monitorHardware();
     stateManager.monitorAllStates();
 
-    // Check Dolibarr UNE FOIS quand WiFi est vraiment OK
+    // Check Dolibarr ONCE, when WiFi is really connected
     if (!dolibarrChecked && WiFi.status() == WL_CONNECTED)
     {
         dolibarrChecked = true;
@@ -122,13 +122,13 @@ void loop()
         Serial.println(ok ? "✅ Dolibarr OK" : "❌ Dolibarr FAIL");
     }
 
-    // Gestion des boutons
+    // Button handling
     if (M5.BtnA.wasPressed())
     {
-        Serial.println("🔄 Bouton A pressed - Start Production Sequence");
+        Serial.println("🔄 Button A pressed - Start Production Sequence");
         if (scheduler.getState() == STATE_WAITING)
         {
-            // Démarrer la séquence complète : vérification → initialisation → production
+            // Start the full sequence: check → initialization → production
             scheduler.triggerCheckConnect();
         }
         else if (scheduler.getState() == STATE_PRODUCTION)
@@ -143,21 +143,21 @@ void loop()
     }
     else if (M5.BtnB.wasPressed())
     {
-        Serial.println("🔄 Bouton B pressed - EMERGENCY STOP");
+        Serial.println("🔄 Button B pressed - EMERGENCY STOP");
         scheduler.triggerStop();
         updateDisplay();
     }
     else if (M5.BtnC.wasPressed())
     {
-        Serial.println("🔄 Bouton C pressed - System Info/Status");
-        // Afficher des informations système utiles
+        Serial.println("🔄 Button C pressed - System Info/Status");
+        // Show useful system information
         M5.Lcd.setCursor(10, 190);
         M5.Lcd.print("Info: ");
         M5.Lcd.print(scheduler.stateToString(scheduler.getState()));
         M5.Lcd.print(" | Conv: ");
         M5.Lcd.print(conveyor.getState());
-        delay(2000); // Afficher l'info pendant 2 secondes
-        updateDisplay(); // Retour à l'affichage normal
+        delay(2000); // Show the info for 2 seconds
+        updateDisplay(); // Back to the normal display
     }
 
     scheduler.executeCurrentState();

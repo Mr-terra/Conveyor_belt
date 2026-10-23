@@ -7,6 +7,6 @@ public:
     void init();
     String readUid();
     
-    // Health check - vérifie la communication I2C sans init complète
+    // Health check - verifies I2C communication without a full init
     static bool checkConnection();
 };

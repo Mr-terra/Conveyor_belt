@@ -1,158 +1,158 @@
-# CMake, Build, Tests et CI/CD
+# CMake, Build, Tests and CI/CD
 
-Ce document explique comment fonctionne le système de build avec CMake, comment exécuter les tests, et comment la CI/CD est configurée pour générer les artefacts.
+This document explains how the build system works with CMake, how to run the tests, and how the CI/CD is configured to generate the artifacts.
 
-## Table des matières
-- [CMake, Build, Tests et CI/CD](#cmake-build-tests-et-cicd)
-  - [Table des matières](#table-des-matières)
-  - [1. Structure du projet](#1-structure-du-projet)
-  - [2. Fichiers CMake](#2-fichiers-cmake)
-    - [2.1. Fichier CMakeLists.txt principal](#21-fichier-cmakeliststxt-principal)
-    - [2.2. Fichier CMakeLists.txt dans src/](#22-fichier-cmakeliststxt-dans-src)
-    - [2.3. Fichier CMakeLists.txt dans test/](#23-fichier-cmakeliststxt-dans-test)
-  - [3. Build du projet](#3-build-du-projet)
-    - [3.1. Prérequis](#31-prérequis)
-    - [3.2. Configuration du build](#32-configuration-du-build)
+## Table of Contents
+- [CMake, Build, Tests and CI/CD](#cmake-build-tests-and-cicd)
+  - [Table of Contents](#table-of-contents)
+  - [1. Project structure](#1-project-structure)
+  - [2. CMake files](#2-cmake-files)
+    - [2.1. Main CMakeLists.txt file](#21-main-cmakeliststxt-file)
+    - [2.2. CMakeLists.txt file in src/](#22-cmakeliststxt-file-in-src)
+    - [2.3. CMakeLists.txt file in test/](#23-cmakeliststxt-file-in-test)
+  - [3. Building the project](#3-building-the-project)
+    - [3.1. Prerequisites](#31-prerequisites)
+    - [3.2. Build configuration](#32-build-configuration)
     - [3.3. Compilation](#33-compilation)
-  - [4. Exécution des tests](#4-exécution-des-tests)
-    - [4.1. Tests unitaires](#41-tests-unitaires)
-    - [4.2. Tests d'intégration](#42-tests-dintégration)
-  - [5. Configuration CI/CD](#5-configuration-cicd)
-    - [5.1. Fichier workflow CI](#51-fichier-workflow-ci)
-    - [5.2. Étapes de la CI](#52-étapes-de-la-ci)
-    - [5.3. Génération des artefacts](#53-génération-des-artefacts)
-  - [6. Commandes utiles](#6-commandes-utiles)
+  - [4. Running the tests](#4-running-the-tests)
+    - [4.1. Unit tests](#41-unit-tests)
+    - [4.2. Integration tests](#42-integration-tests)
+  - [5. CI/CD configuration](#5-cicd-configuration)
+    - [5.1. CI workflow file](#51-ci-workflow-file)
+    - [5.2. CI steps](#52-ci-steps)
+    - [5.3. Artifact generation](#53-artifact-generation)
+  - [6. Useful commands](#6-useful-commands)
 
-## 1. Structure du projet
+## 1. Project structure
 
-Le projet est organisé comme suit :
+The project is organized as follows:
 
 ```
 conveyor/
-├── CMakeLists.txt                  # Configuration CMake principale
+├── CMakeLists.txt                  # Main CMake configuration
 ├── src/
-│   └── CMakeLists.txt             # Configuration CMake pour le code source
+│   └── CMakeLists.txt             # CMake configuration for the source code
 ├── test/
-│   ├── CMakeLists.txt             # Configuration CMake pour les tests
+│   ├── CMakeLists.txt             # CMake configuration for the tests
 │   └── conveyor_tests/
-│       └── CMakeLists.txt         # Configuration CMake pour les tests unitaires
-├── include/                        # Fichiers d'en-tête
-├── lib/                           # Bibliothèques externes
+│       └── CMakeLists.txt         # CMake configuration for the unit tests
+├── include/                        # Header files
+├── lib/                           # External libraries
 └── workflows/
-    └── ci.yml                     # Configuration GitHub Actions CI
+    └── ci.yml                     # GitHub Actions CI configuration
 ```
 
-## 2. Fichiers CMake
+## 2. CMake files
 
-### 2.1. Fichier CMakeLists.txt principal
+### 2.1. Main CMakeLists.txt file
 
-Le fichier `CMakeLists.txt` à la racine du projet configure :
+The `CMakeLists.txt` file at the root of the project configures:
 
-- Le nom du projet et la version
-- Le standard C++ utilisé (C++17)
-- Les options de build (tests, coverage, etc.)
-- L'inclusion des sous-répertoires (src/, test/)
-- La configuration des tests avec CTest
-- La génération des artefacts
+- The project name and version
+- The C++ standard used (C++17)
+- The build options (tests, coverage, etc.)
+- The inclusion of the subdirectories (src/, test/)
+- The test configuration with CTest
+- The artifact generation
 
-Exemple de configuration :
+Example configuration:
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
 project(conveyor VERSION 1.0.0 LANGUAGES CXX)
 
-# Configuration du standard C++
+# C++ standard configuration
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Options de build
+# Build options
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_COVERAGE "Build with coverage support" OFF)
 
-# Ajout des sous-répertoires
+# Add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)
 
-# Configuration des tests
+# Test configuration
 enable_testing()
 include(CTest)
 ```
 
-### 2.2. Fichier CMakeLists.txt dans src/
+### 2.2. CMakeLists.txt file in src/
 
-Ce fichier configure la compilation du code source principal :
+This file configures the compilation of the main source code:
 
-- Création de la bibliothèque ou de l'exécutable principal
-- Ajout des fichiers sources
-- Configuration des include paths
-- Liaison avec les bibliothèques externes
+- Creation of the main library or executable
+- Addition of the source files
+- Configuration of the include paths
+- Linking with the external libraries
 
-Exemple :
+Example:
 
 ```cmake
-# Création de l'exécutable principal
+# Create the main executable
 add_executable(conveyor
     main.cpp
     conveyor/conveyor.cpp
-    # ... autres fichiers sources
+    # ... other source files
 )
 
-# Configuration des include paths
+# Include paths configuration
 target_include_directories(conveyor PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/lib/M5Stack_lib/src
 )
 
-# Liaison avec les bibliothèques
+# Link the libraries
 target_link_libraries(conveyor
     pthread
-    # ... autres bibliothèques
+    # ... other libraries
 )
 ```
 
-### 2.3. Fichier CMakeLists.txt dans test/
+### 2.3. CMakeLists.txt file in test/
 
-Ce fichier configure la compilation et l'exécution des tests :
+This file configures the compilation and execution of the tests:
 
-- Création des exécutables de test
-- Configuration des dépendances de test
-- Ajout des tests à CTest
+- Creation of the test executables
+- Configuration of the test dependencies
+- Registration of the tests with CTest
 
-Exemple :
+Example:
 
 ```cmake
-# Création de l'exécutable de test unitaire
+# Create the unit test executable
 add_executable(conveyor_unit_test
     conveyor_tests/conveyor_unit_test.cpp
     conveyor_tests/mock_grbl.h
     conveyor_tests/mock_wire.h
 )
 
-# Configuration des dépendances
+# Dependency configuration
 target_link_libraries(conveyor_unit_test
     conveyor
     GTest::GTest
     GTest::Main
 )
 
-# Ajout du test à CTest
+# Register the test with CTest
 add_test(NAME conveyor_unit_test COMMAND conveyor_unit_test)
 ```
 
-## 3. Build du projet
+## 3. Building the project
 
-### 3.1. Prérequis
+### 3.1. Prerequisites
 
-Pour builder le projet, vous avez besoin de :
+To build the project, you need:
 
-- CMake (version 3.10 ou supérieure)
-- Un compilateur C++17 (GCC, Clang, MSVC)
-- Git (pour les dépendances)
-- Make ou Ninja (pour la compilation)
+- CMake (version 3.10 or higher)
+- A C++17 compiler (GCC, Clang, MSVC)
+- Git (for the dependencies)
+- Make or Ninja (for the compilation)
 
-### 3.2. Configuration du build
+### 3.2. Build configuration
 
-Créez un répertoire de build et configurez le projet :
+Create a build directory and configure the project:
 
 ```bash
 mkdir build
@@ -160,13 +160,13 @@ cd build
 cmake ..
 ```
 
-Pour activer les tests :
+To enable the tests:
 
 ```bash
 cmake -DBUILD_TESTS=ON ..
 ```
 
-Pour activer la couverture de code :
+To enable code coverage:
 
 ```bash
 cmake -DBUILD_COVERAGE=ON ..
@@ -174,90 +174,90 @@ cmake -DBUILD_COVERAGE=ON ..
 
 ### 3.3. Compilation
 
-Une fois configuré, compilez le projet :
+Once configured, build the project:
 
 ```bash
 cmake --build .
 ```
 
-Ou avec Make :
+Or with Make:
 
 ```bash
 make
 ```
 
-## 4. Exécution des tests
+## 4. Running the tests
 
-### 4.1. Tests unitaires
+### 4.1. Unit tests
 
-Les tests unitaires sont situés dans le répertoire `test/conveyor_tests/`.
+The unit tests are located in the `test/conveyor_tests/` directory.
 
-Pour exécuter les tests :
+To run the tests:
 
 ```bash
 cd build
 ctest
 ```
 
-Ou pour un test spécifique :
+Or for a specific test:
 
 ```bash
 ctest -R conveyor_unit_test
 ```
 
-### 4.2. Tests d'intégration
+### 4.2. Integration tests
 
-Les tests d'intégration sont situés dans `test/test_integration.cpp`.
+The integration tests are located in `test/test_integration.cpp`.
 
-Pour exécuter les tests d'intégration :
+To run the integration tests:
 
 ```bash
 ./test/test_integration
 ```
 
-## 5. Configuration CI/CD
+## 5. CI/CD configuration
 
-### 5.1. Fichier workflow CI
+### 5.1. CI workflow file
 
-Le fichier `workflows/ci.yml` configure l'intégration continue avec GitHub Actions.
+The `workflows/ci.yml` file configures the continuous integration with GitHub Actions.
 
-Il contient :
+It contains:
 
-- Les déclencheurs (push, pull request)
-- Les jobs de build et test
-- La génération des artefacts
-- Le déploiement
+- The triggers (push, pull request)
+- The build and test jobs
+- The artifact generation
+- The deployment
 
-### 5.2. Étapes de la CI
+### 5.2. CI steps
 
-La CI effectue les étapes suivantes :
+The CI performs the following steps:
 
-1. **Checkout** : Récupération du code source
-2. **Installation des dépendances** : Installation de CMake, compilateur, etc.
-3. **Configuration** : Exécution de CMake
-4. **Build** : Compilation du projet
-5. **Tests** : Exécution des tests unitaires et d'intégration
-6. **Génération des artefacts** : Création des binaires et archives
-7. **Upload des artefacts** : Mise à disposition des artefacts
+1. **Checkout**: Retrieve the source code
+2. **Install dependencies**: Install CMake, the compiler, etc.
+3. **Configuration**: Run CMake
+4. **Build**: Compile the project
+5. **Tests**: Run the unit and integration tests
+6. **Artifact generation**: Create the binaries and archives
+7. **Artifact upload**: Make the artifacts available
 
-### 5.3. Génération des artefacts
+### 5.3. Artifact generation
 
-Les artefacts générés incluent :
+The generated artifacts include:
 
-- L'exécutable principal (`conveyor`)
-- Les exécutables de test
-- Les rapports de couverture (si activé)
-- Les logs de build et de test
+- The main executable (`conveyor`)
+- The test executables
+- The coverage reports (if enabled)
+- The build and test logs
 
-## 6. Commandes utiles
+## 6. Useful commands
 
-| Commande | Description |
+| Command | Description |
 |----------|-------------|
-| `cmake ..` | Configure le projet |
-| `cmake --build .` | Compile le projet |
-| `ctest` | Exécute tous les tests |
-| `ctest -V` | Exécute les tests en mode verbeux |
-| `ctest -R test_name` | Exécute un test spécifique |
-| `make clean` | Nettoie les fichiers de build |
-| `cmake -DBUILD_TESTS=OFF ..` | Désactive les tests |
-| `cmake -DBUILD_COVERAGE=ON ..` | Active la couverture de code |
+| `cmake ..` | Configure the project |
+| `cmake --build .` | Build the project |
+| `ctest` | Run all the tests |
+| `ctest -V` | Run the tests in verbose mode |
+| `ctest -R test_name` | Run a specific test |
+| `make clean` | Clean the build files |
+| `cmake -DBUILD_TESTS=OFF ..` | Disable the tests |
+| `cmake -DBUILD_COVERAGE=ON ..` | Enable code coverage |

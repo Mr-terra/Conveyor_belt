@@ -9,7 +9,7 @@ extern Conveyor conveyor;
 extern SorterController sorterController;
 extern DolibarrAPI dolibarrApi;
 
-// Pointeurs vers les dépendances (injection de dépendances)
+// Pointers to the dependencies (dependency injection)
 static Conveyor *_conveyor = nullptr;
 static SorterController *_sorterController = nullptr;
 static DolibarrAPI *_dolibarrApi = nullptr;
@@ -29,7 +29,7 @@ void CheckConnect::setSorterController(SorterController *sorter)
     _sorterController = sorter;
 }
 
-// Méthode pour vérifier que toutes les dépendances sont configurées
+// Checks that all dependencies are configured
 bool CheckConnect::areDependenciesConfigured()
 {
     bool allConfigured = (_conveyor != nullptr) &&
@@ -54,7 +54,7 @@ bool CheckConnect::checkConnections()
 {
     Serial.println("\n🔍 === Checking all connections ===");
 
-    // Vérifier que toutes les dépendances sont configurées
+    // Check that all dependencies are configured
     if (!areDependenciesConfigured())
     {
         Serial.println("❌ === Connection check ABORTED - dependencies not configured ===\n");

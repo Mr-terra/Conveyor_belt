@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-// Forward declarations pour éviter les includes circulaires
+// Forward declarations to avoid circular includes
 class CheckConnect;
 class InitPosition;
 class SorterController;
@@ -26,7 +26,7 @@ public:
     void triggerProduction();
     void triggerStop();
     
-    // Configuration des dépendances (DOIT être appelé après initialize)
+    // Dependency configuration (MUST be called after initialize)
     void setDependencies(
         CheckConnect* checkConnect,
         InitPosition* initPosition,
@@ -34,7 +34,7 @@ public:
         Conveyor* conveyor
     );
     
-    // Méthode principale pour exécuter la logique de l'état courant
+    // Main method that runs the logic of the current state
     void executeCurrentState();
     
     // State conversion function for automatic monitoring
@@ -42,7 +42,7 @@ public:
 
 private:
     String _current_state;
-    bool canRecoverFromError(); // Méthode pour vérifier si les conditions d'erreur sont résolues
+    bool canRecoverFromError(); // Checks whether the error conditions have been resolved
 };
 
 #endif

@@ -44,8 +44,8 @@ jobs:
         mkdir -p ~/Arduino/hardware/espressif
         cd ~/Arduino/hardware/espressif
 
-        # Télécharger la dernière version stable
-        # D'abord, trouver l'URL correcte
+        # Download the latest stable version
+        # First, find the correct URL
         LATEST_URL=$(curl -s https://api.github.com/repos/espressif/arduino-esp32/releases/latest | \
                     grep "browser_download_url.*tar.gz" | \
                     cut -d '"' -f 4)

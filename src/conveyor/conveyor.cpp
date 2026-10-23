@@ -6,9 +6,9 @@
 
 Conveyor conveyor(10, 250);
 
-// États basés sur les états réels du module GRBL
+// States based on the real states of the GRBL module
 const String CONVEYOR_STATE_STOPPED = "STOPPED"; // 'I' (Idle)
-const String CONVEYOR_STATE_RUNNING = "RUNNING"; // Autre que 'I' ou 'A'
+const String CONVEYOR_STATE_RUNNING = "RUNNING"; // Anything other than 'I' or 'A'
 const String CONVEYOR_STATE_ALARM = "ALARM";     // 'A' (Alarm/Lock)
 
 Conveyor::Conveyor(int movement, int speed, uint8_t i2cAddress)
@@ -33,7 +33,7 @@ String Conveyor::stateToString(String state)
 
 void Conveyor::setupStateRules(StateManager &stateManager)
 {
-    // Règles basées sur les transitions hardware réelles
+    // Rules based on real hardware transitions
     stateManager.addStateRule("Conveyor", "STOPPED", "RUNNING", ERROR_INFO, "Motor started (detected from hardware)");
     stateManager.addStateRule("Conveyor", "RUNNING", "STOPPED", ERROR_INFO, "Motor stopped (detected from hardware)");
     stateManager.addStateRule("Conveyor", "RUNNING", "ALARM", ERROR_CRITICAL, "Hardware alarm while running");
@@ -52,14 +52,14 @@ void Conveyor::initialize(StateManager &stateManager)
 {
     M5.begin();
 
-    // Initialiser le module GRBL
+    // Initialize the GRBL module
     _grbl.Init(&Wire);
     _grbl.setMode("distance");
 
-    // Nettoyer le buffer
+    // Clear the buffer
     _grbl.readClean();
 
-    // Déverrouiller si nécessaire
+    // Unlock if needed
     if (_grbl.inLock())
     {
         Serial.println("⚠️ Module locked, unlocking...");
@@ -67,11 +67,11 @@ void Conveyor::initialize(StateManager &stateManager)
         delay(100);
     }
 
-    // Arrêter le moteur au démarrage
+    // Stop the motor at startup
     _grbl.setMotor(0, 0, 0, 0);
     _grbl.waitIdle();
 
-    // Lire l'état initial depuis le hardware
+    // Read the initial state from the hardware
     readHardwareState();
 
     Serial.println("✅ Conveyor initialized with Module GRBL 13.2");
@@ -83,11 +83,11 @@ void Conveyor::initialize(StateManager &stateManager)
 
 bool Conveyor::checkConnection()
 {
-    // Vérification robuste : tester la communication I2C avec le module GRBL
+    // Robust check: test I2C communication with the GRBL module
     Wire.begin();
 
-    // Étape 1 : Vérification basique de l'adresse I2C
-    Wire.beginTransmission(CONVEYOR_ADDR); // Adresse par défaut du GRBL
+    // Step 1: basic check of the I2C address
+    Wire.beginTransmission(CONVEYOR_ADDR); // Default GRBL address
     byte error = Wire.endTransmission();
 
     if (error != 0)
@@ -101,7 +101,7 @@ bool Conveyor::checkConnection()
         return false;
     }
 
-    // Étape 2 : Vérification que le module répond aux commandes
+    // Step 2: check that the module responds to commands
     String status = _grbl.readStatus();
 
     if (status.length() == 0)
@@ -113,7 +113,7 @@ bool Conveyor::checkConnection()
         return false;
     }
 
-    // Étape 3 : Vérification que le module n'est pas en état d'erreur
+    // Step 3: check that the module is not in an error state
     if (_grbl.inLock())
     {
         Serial.println("❌ GRBL Motor is in LOCK/ALARM state");
@@ -127,19 +127,19 @@ bool Conveyor::checkConnection()
     return true;
 }
 
-// ✨ CŒUR DU SYSTÈME : Lecture de l'état depuis le hardware
+// ✨ CORE OF THE SYSTEM: reading the state from the hardware
 String Conveyor::readHardwareState()
 {
     String newState;
 
-    // Lire le statut du module (retourne une String commençant par le code état)
+    // Read the module status (returns a String starting with the state code)
     String status = _grbl.readStatus();
 
     if (status.length() > 0)
     {
         char stateChar = status[0];
 
-        // Mapper les codes GRBL aux états du conveyor
+        // Map GRBL codes to conveyor states
         switch (stateChar)
         {
         case 'I': // Idle
@@ -153,7 +153,7 @@ String Conveyor::readHardwareState()
         case 'R': // Run
         case 'J': // Jog
         case 'H': // Hold
-        default:  // Tout autre état = en mouvement ou occupé
+        default:  // Any other state = moving or busy
             if (stateChar != 'I' && stateChar != 'A')
             {
                 newState = CONVEYOR_STATE_RUNNING;
@@ -165,7 +165,7 @@ String Conveyor::readHardwareState()
             break;
         }
 
-        // Debug: afficher le code brut
+        // Debug: print the raw code
         if (newState != _currentState)
         {
             Serial.print("📡 Raw status: '");
@@ -177,7 +177,7 @@ String Conveyor::readHardwareState()
     }
     else
     {
-        // Pas de réponse, utiliser les fonctions helper
+        // No response, fall back to the helper functions
         if (_grbl.inLock())
         {
             newState = CONVEYOR_STATE_ALARM;
@@ -192,7 +192,7 @@ String Conveyor::readHardwareState()
         }
     }
 
-    // === MISE À JOUR DE L'ÉTAT (automatique) ===
+    // === STATE UPDATE (automatic) ===
     if (newState != _currentState)
     {
         Serial.print("🔄 Hardware state change: ");
@@ -200,14 +200,14 @@ String Conveyor::readHardwareState()
         Serial.print(" → ");
         Serial.println(newState);
 
-        _currentState = newState; // ← Seul endroit où on change l'état
-        // Le StateManager détectera ce changement automatiquement
+        _currentState = newState; // ← The only place where the state is changed
+        // The StateManager will detect this change automatically
     }
 
     return newState;
 }
 
-// ✨ SURVEILLANCE SIMPLIFIÉE - AUCUN triggerError manuel
+// ✨ SIMPLIFIED MONITORING - NO manual triggerError
 void Conveyor::monitorHardware()
 {
     static unsigned long lastCheck = 0;
@@ -215,11 +215,11 @@ void Conveyor::monitorHardware()
 
     if (now - lastCheck >= 100)
     {
-        // Lire l'état depuis le hardware
+        // Read the state from the hardware
         readHardwareState();
-        // ↑ C'est TOUT ! Les rules du StateManager gèrent le reste
+        // ↑ That's ALL! The StateManager rules handle the rest
 
-        // Réinitialiser le flag _isRunning si le moteur est arrêté
+        // Reset the _isRunning flag if the motor is stopped
         if (_currentState == CONVEYOR_STATE_STOPPED)
         {
             _isRunning = false;
@@ -229,10 +229,10 @@ void Conveyor::monitorHardware()
     }
 }
 
-// ✨ COMMANDES SIMPLIFIÉES (pas de setState manuel)
+// ✨ SIMPLIFIED COMMANDS (no manual setState)
 void Conveyor::start()
 {
-    // Déverrouiller si nécessaire
+    // Unlock if needed
     if (_grbl.inLock())
     {
         Serial.println("🔓 Unlocking module...");
@@ -242,26 +242,26 @@ void Conveyor::start()
 
     _isRunning = true;
     Serial.println("✅ Conveyor start command sent");
-    // L'état passera à RUNNING automatiquement via readHardwareState()
+    // The state will switch to RUNNING automatically via readHardwareState()
 }
 
 void Conveyor::stop()
 {
     _grbl.setMotor(0, 0, 0, 0);
-    _grbl.waitIdle(); // Attendre que le moteur soit vraiment arrêté
+    _grbl.waitIdle(); // Wait until the motor has really stopped
     _isRunning = false;
     Serial.println("🛑 Conveyor stop command sent");
-    // L'état passera à STOPPED automatiquement via readHardwareState()
+    // The state will switch to STOPPED automatically via readHardwareState()
 }
 
 void Conveyor::move(bool forward)
 {
     if (!_isRunning)
     {
-        this->start(); // Démarrer le moteur si ce n'est pas déjà fait
+        this->start(); // Start the motor if it is not already running
     }
 
-    // Augmentez la valeur de _movement pour un mouvement visible
+    // Increase the _movement value for a visible movement
     int angle = forward ? _movement : -_movement;
 
     _grbl.setMotor(angle, 0, 0, _speed);
@@ -270,7 +270,7 @@ void Conveyor::move(bool forward)
     Serial.print(angle);
     Serial.print(", speed=");
     Serial.println(_speed);
-    // L'état sera mis à jour automatiquement par monitorHardware()
+    // The state will be updated automatically by monitorHardware()
 }
 
 void Conveyor::setSpeed(int speed)

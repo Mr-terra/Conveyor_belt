@@ -16,13 +16,13 @@ void ServoSorter::init(StateManager &stateManager)
     goPlus.begin();
     goPlus.Servo_write_angle(SERVO_NUM0, init_angle); // neutre
 
-    // Observer l’état du servo
+    // Observe the servo state
     stateManager.observeState<String>(
         &servoState,
         "SERVO",
         stateToString);
 
-    // Règles (statique, pas de dynamique ici)
+    // Rules (static, no dynamic rules here)
     stateManager.addStateRule("SERVO", "INIT", "*", ERROR_INFO, "Servo initialized");
     stateManager.addStateRule("SERVO", "*", "ERROR", ERROR_CRITICAL, "Servo error");
 

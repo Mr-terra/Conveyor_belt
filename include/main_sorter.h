@@ -8,7 +8,7 @@ public:
     void initialize(StateManager &sm);
     void production();
 
-    // Health check - vérifie l'ensemble du système de tri
+    // Health check - verifies the whole sorting system
     bool checkConnection();
 
     void setState(const char *newState);

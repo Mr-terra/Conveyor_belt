@@ -9,7 +9,7 @@ using ::testing::NiceMock;
 using ::testing::_;
 
 // =============================================
-// TESTS DE LA MÉTHODE checkConnection()
+// TESTS FOR THE checkConnection() METHOD
 // =============================================
 
 TEST(ConveyorUnitTest, CheckConnection_Success_AllChecksPass) {
@@ -19,13 +19,13 @@ TEST(ConveyorUnitTest, CheckConnection_Success_AllChecksPass) {
     Conveyor conveyor(10, 500);
     conveyor._grbl = &mockGrbl;
 
-    // Configurer le mock pour un succès complet
+    // Configure the mock for a full success
     EXPECT_CALL(mockWire, beginTransmission(CONVEYOR_ADDR))
-        .WillOnce(Return(0)); // I2C succès
+        .WillOnce(Return(0)); // I2C success
     EXPECT_CALL(mockGrbl, readStatus())
-        .WillOnce(Return("Idle")); // Réponse valide
+        .WillOnce(Return("Idle")); // Valid response
     EXPECT_CALL(mockGrbl, inLock())
-        .WillOnce(Return(false)); // Pas verrouillé
+        .WillOnce(Return(false)); // Not locked
 
     // Act
     bool result = conveyor.checkConnection();
@@ -35,7 +35,7 @@ TEST(ConveyorUnitTest, CheckConnection_Success_AllChecksPass) {
 }
 
 // =============================================
-// TESTS DE LA MÉTHODE readHardwareState()
+// TESTS FOR THE readHardwareState() METHOD
 // =============================================
 
 TEST(ConveyorUnitTest, ReadHardwareState_IdleStatus_ReturnsStopped) {
@@ -44,9 +44,9 @@ TEST(ConveyorUnitTest, ReadHardwareState_IdleStatus_ReturnsStopped) {
     Conveyor conveyor(10, 500);
     conveyor._grbl = &mockGrbl;
 
-    // Configurer le mock pour un état Idle
+    // Configure the mock for an Idle state
     EXPECT_CALL(mockGrbl, readStatus())
-        .WillOnce(Return("I")); // 'I' pour Idle
+        .WillOnce(Return("I")); // 'I' for Idle
 
     // Act
     String result = conveyor.readHardwareState();

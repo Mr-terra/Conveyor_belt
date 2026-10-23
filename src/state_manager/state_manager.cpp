@@ -28,7 +28,7 @@ void StateManager::checkStateRules(String module, String fromState, String toSta
         {
             Error::triggerError(rule.message, rule.level, module);
             
-            // Gérer les changements d'état critiques
+            // Handle critical state changes
             handleCriticalStateChange(module, toState, rule.level);
         }
     }
@@ -37,21 +37,21 @@ void StateManager::checkStateRules(String module, String fromState, String toSta
 void StateManager::handleCriticalStateChange(String module, String newState, ErrorLevel level)
 {
     if (_scheduler == nullptr) {
-        return; // Pas de scheduler configuré, ne rien faire
+        return; // No scheduler configured, do nothing
     }
 
-    // Gestion des états critiques par module
+    // Handle critical states per module
     if (module == "Conveyor") {
         if (newState == "ALARM") {
             Serial.println("🚨 Critical conveyor ALARM detected");
             
-            // Si nous sommes en production, passer en WAITING
+            // If we are in production, switch to WAITING
             if (_scheduler->getState() == STATE_PRODUCTION) {
                 Serial.println("   Stopping production due to conveyor alarm");
                 _scheduler->setState(STATE_WAITING);
             }
             
-            // Pour les erreurs fatales, passer en ERROR
+            // For fatal errors, switch to ERROR
             if (level == ERROR_FATAL) {
                 Serial.println("   Fatal error - switching to ERROR state");
                 _scheduler->setState(STATE_ERROR);
@@ -71,14 +71,14 @@ void StateManager::monitorAllStates()
     unsigned long currentTime = millis();
     for (StateMonitor &monitor : stateMonitors)
     {
-        // 1. Lire l'état actuel via le pointeur
+        // 1. Read the current state through the pointer
         String *statePtr = static_cast<String *>(monitor.stateVariable);
         String currentState = monitor.stateToString(statePtr);
 
-        // 2. Comparer avec l'état précédent
+        // 2. Compare with the previous state
         if (currentState != monitor.previousState)
         {
-            // 3. CHANGEMENT DÉTECTÉ !
+            // 3. CHANGE DETECTED!
             Serial.print("🔄 State change detected: ");
             Serial.print(monitor.moduleName);
             Serial.print(" from ");
@@ -86,10 +86,10 @@ void StateManager::monitorAllStates()
             Serial.print(" to ");
             Serial.println(currentState);
 
-            // 4. Vérifier les règles
+            // 4. Check the rules
             checkStateRules(monitor.moduleName, monitor.previousState, currentState);
 
-            // 5. Mettre à jour l'état précédent
+            // 5. Update the previous state
             monitor.previousState = currentState;
             monitor.lastChangeTime = currentTime;
             monitor.isStuckWarningGiven = false;

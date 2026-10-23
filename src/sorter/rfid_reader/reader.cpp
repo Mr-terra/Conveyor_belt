@@ -49,7 +49,7 @@ String RFIDReader::readUid()
 
 bool RFIDReader::checkConnection()
 {
-    // Vérification simple : scanner l'adresse I2C du module RFID
+    // Simple check: scan the I2C address of the RFID module
     Wire.begin(21, 22);
     Wire.beginTransmission(RFID_ADDR);
     byte error = Wire.endTransmission();

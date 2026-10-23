@@ -1,106 +1,106 @@
-# 🔄 Architecture du Flux des États
+# 🔄 State Flow Architecture
 
-## 📊 Vue d'Ensemble du Système
+## 📊 System Overview
 
-Le système utilise une architecture à **3 couches** pour gérer les états :
+The system uses a **3-layer** architecture to manage the states:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         MAIN.CPP                             │
-│                    (Orchestrateur Principal)                 │
+│                    (Main Orchestrator)                       │
 │                                                              │
-│  • Appelle monitorHardware() toutes les 10ms                │
-│  • Appelle monitorAllStates() toutes les 10ms               │
-│  • Gère la logique métier du scheduler                      │
-│  • Envoie les commandes utilisateur (start/stop)            │
+│  • Calls monitorHardware() every 10ms                        │
+│  • Calls monitorAllStates() every 10ms                       │
+│  • Handles the scheduler's business logic                    │
+│  • Sends user commands (start/stop)                          │
 └─────────────────────────────────────────────────────────────┘
-        ↓ Commandes              ↑ Lecture état
+        ↓ Commands              ↑ State reading
         ↓                        ↑
 ┌─────────────────────────────────────────────────────────────┐
 │                      CONVEYOR.CPP                            │
-│                  (Module Hardware Physique)                  │
+│                  (Physical Hardware Module)                  │
 │                                                              │
-│  Variable d'État : _currentState (String privé)             │
-│  • "STOPPED" - Moteur arrêté (GRBL = 'I')                   │
-│  • "RUNNING" - Moteur en mouvement (GRBL = 'R')             │
-│  • "ALARM"   - Module verrouillé (GRBL = 'A')               │
+│  State variable: _currentState (private String)              │
+│  • "STOPPED" - Motor stopped (GRBL = 'I')                    │
+│  • "RUNNING" - Motor moving (GRBL = 'R')                     │
+│  • "ALARM"   - Module locked (GRBL = 'A')                    │
 │                                                              │
-│  Responsabilités :                                           │
-│  1. Lire le hardware via _grbl.readStatus()                 │
-│  2. Mapper les codes GRBL → états internes                  │
-│  3. Écrire dans _currentState                               │
-│  4. Exécuter les commandes (start/stop/move)                │
+│  Responsibilities:                                           │
+│  1. Read the hardware via _grbl.readStatus()                 │
+│  2. Map the GRBL codes → internal states                     │
+│  3. Write into _currentState                                 │
+│  4. Execute the commands (start/stop/move)                   │
 └─────────────────────────────────────────────────────────────┘
-        ↑ Observe via pointeur
+        ↑ Observed via pointer
         ↑
 ┌─────────────────────────────────────────────────────────────┐
 │                    STATE_MANAGER.CPP                         │
-│                  (Surveillant Automatique)                   │
+│                  (Automatic Monitor)                         │
 │                                                              │
-│  Moniteur d'État : StateMonitor                             │
-│  • void* stateVariable → Pointe vers _currentState          │
-│  • String previousState → Mémorise l'état précédent         │
+│  State monitor: StateMonitor                                 │
+│  • void* stateVariable → Points to _currentState             │
+│  • String previousState → Remembers the previous state       │
 │                                                              │
-│  Responsabilités :                                           │
-│  1. Lire *stateVariable (déréférence le pointeur)           │
-│  2. Comparer currentState vs previousState                  │
-│  3. Si différent → Appliquer les règles (StateRule)         │
-│  4. Déclencher les erreurs via Error::triggerError()        │
+│  Responsibilities:                                           │
+│  1. Read *stateVariable (dereference the pointer)            │
+│  2. Compare currentState vs previousState                    │
+│  3. If different → Apply the rules (StateRule)               │
+│  4. Trigger the errors via Error::triggerError()             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🎬 Séquence Complète d'un Changement d'État
+## 🎬 Full Sequence of a State Change
 
-### Phase 1 : Initialisation (setup)
+### Phase 1: Initialization (setup)
 
 ```cpp
 void setup() {
     M5.begin();
     
-    // 1️⃣ Initialiser le module Conveyor
+    // 1️⃣ Initialize the Conveyor module
     conveyor.initialize(stateManager);
 }
 ```
 
-**Dans `conveyor.initialize()` :**
+**In `conveyor.initialize()`:**
 
 ```cpp
 void Conveyor::initialize(StateManager& stateManager) {
-    // 1. Initialiser le hardware GRBL
+    // 1. Initialize the GRBL hardware
     _grbl.Init(&Wire);
     _grbl.setMode("distance");
     
-    // 2. Lire l'état initial depuis le hardware
+    // 2. Read the initial state from the hardware
     readHardwareState();
     //   ↓
-    //   └─> _currentState = "STOPPED" (par exemple)
+    //   └─> _currentState = "STOPPED" (for example)
     
-    // 3. Enregistrer le monitoring automatique
+    // 3. Register the automatic monitoring
     configureStateMonitoring(stateManager);
     //   ↓
     //   ├─> stateManager.observeState(&_currentState, "Conveyor", ...)
     //   │    ↓
-    //   │    └─> Le StateManager stocke :
-    //   │         • Pointeur vers _currentState
+    //   │    └─> The StateManager stores:
+    //   │         • Pointer to _currentState
     //   │         • previousState = "STOPPED"
-    //   │         • Callback stateToString()
+    //   │         • stateToString() callback
     //   │
     //   └─> setupStateRules(stateManager)
     //        ↓
-    //        └─> Enregistre les règles de transition :
+    //        └─> Registers the transition rules:
     //             STOPPED → RUNNING = ERROR_INFO
     //             * → ALARM = ERROR_FATAL
     //             etc.
 }
 ```
 
-**Résultat après setup :**
+**Result after setup:**
 
 ```
 StateManager.stateMonitors[0] = {
-    stateVariable: 0x3FFC2A40,  // Adresse de conveyor._currentState
+    stateVariable: 0x3FFC2A40,  // Address of conveyor._currentState
     moduleName: "Conveyor",
     previousState: "STOPPED",
     lastChangeTime: 1234,
@@ -111,24 +111,24 @@ StateManager.stateMonitors[0] = {
 
 ---
 
-### Phase 2 : Boucle Principale (loop)
+### Phase 2: Main Loop (loop)
 
 ```cpp
 void loop() {
     M5.update();
     
-    // ✨ ÉTAPE 1 : Lire le hardware
+    // ✨ STEP 1: Read the hardware
     conveyor.monitorHardware();
     
-    // ✨ ÉTAPE 2 : Détecter les changements
+    // ✨ STEP 2: Detect the changes
     stateManager.monitorAllStates();
     
-    // Commandes utilisateur
+    // User commands
     if (M5.BtnA.wasPressed()) {
         conveyor.start();
     }
     
-    // Mouvement continu
+    // Continuous movement
     if (conveyor.getState() == CONVEYOR_STATE_RUNNING) {
         conveyor.move(true);
     }
@@ -139,36 +139,36 @@ void loop() {
 
 ---
 
-### ÉTAPE 1 : `conveyor.monitorHardware()`
+### STEP 1: `conveyor.monitorHardware()`
 
-**Responsabilité : Synchroniser l'état interne avec le hardware réel**
+**Responsibility: Synchronize the internal state with the real hardware**
 
 ```cpp
 void Conveyor::monitorHardware() {
     static unsigned long lastCheck = 0;
     
-    if (millis() - lastCheck >= 100) {  // Throttling à 100ms
+    if (millis() - lastCheck >= 100) {  // Throttled to 100ms
         readHardwareState();
         //   ↓
-        //   └─> LIT l'état du module GRBL
+        //   └─> READS the state of the GRBL module
         //        ↓
-        //        └─> MET À JOUR _currentState si changement détecté
+        //        └─> UPDATES _currentState if a change is detected
         
         lastCheck = millis();
     }
 }
 ```
 
-**Détail de `readHardwareState()` :**
+**Detail of `readHardwareState()`:**
 
 ```cpp
 String Conveyor::readHardwareState() {
-    // 1. Interroger le module GRBL
+    // 1. Query the GRBL module
     String status = _grbl.readStatus();
     //                     ↑
-    //              Retourne "I" ou "R" ou "A"
+    //              Returns "I" or "R" or "A"
     
-    // 2. Mapper le code GRBL vers un état
+    // 2. Map the GRBL code to a state
     String newState;
     if (status[0] == 'I') {
         newState = CONVEYOR_STATE_STOPPED;  // "STOPPED"
@@ -178,58 +178,58 @@ String Conveyor::readHardwareState() {
         newState = CONVEYOR_STATE_RUNNING;  // "RUNNING"
     }
     
-    // 3. Mettre à jour SI CHANGEMENT
+    // 3. Update IF CHANGED
     if (newState != _currentState) {
         Serial.print("🔄 Hardware: ");
-        Serial.print(_currentState);  // Ex: "STOPPED"
+        Serial.print(_currentState);  // e.g. "STOPPED"
         Serial.print(" → ");
-        Serial.println(newState);     // Ex: "RUNNING"
+        Serial.println(newState);     // e.g. "RUNNING"
         
-        _currentState = newState;  // ← ÉCRITURE dans la variable observée
+        _currentState = newState;  // ← WRITE into the observed variable
         //    ↑
-        //    Le StateManager va détecter ce changement
-        //    car il a un pointeur vers cette variable
+        //    The StateManager will detect this change
+        //    because it holds a pointer to this variable
     }
     
     return newState;
 }
 ```
 
-**État du système après ÉTAPE 1 :**
+**System state after STEP 1:**
 
 ```
-Mémoire 0x3FFC2A40 (conveyor._currentState) = "RUNNING"
+Memory 0x3FFC2A40 (conveyor._currentState) = "RUNNING"
                                                ↑
-                        Le contenu a changé, mais le StateManager
-                        ne l'a pas encore détecté
+                        The content has changed, but the StateManager
+                        has not detected it yet
 ```
 
 ---
 
-### ÉTAPE 2 : `stateManager.monitorAllStates()`
+### STEP 2: `stateManager.monitorAllStates()`
 
-**Responsabilité : Détecter les changements et appliquer les règles**
+**Responsibility: Detect the changes and apply the rules**
 
 ```cpp
 void StateManager::monitorAllStates() {
     for (StateMonitor& monitor : stateMonitors) {
         
-        // 1️⃣ LIRE l'état actuel via le pointeur
+        // 1️⃣ READ the current state through the pointer
         String* statePtr = static_cast<String*>(monitor.stateVariable);
         //      ↑
-        //      = 0x3FFC2A40 (adresse de conveyor._currentState)
+        //      = 0x3FFC2A40 (address of conveyor._currentState)
         
         String currentState = monitor.stateToString(*statePtr);
         //                                           ↑
-        //                    Déréférence le pointeur → lit "RUNNING"
+        //                    Dereferences the pointer → reads "RUNNING"
         //                                           ↓
-        //                    stateToString("RUNNING") → retourne "RUNNING"
+        //                    stateToString("RUNNING") → returns "RUNNING"
         
-        // 2️⃣ COMPARER avec l'état précédent
+        // 2️⃣ COMPARE with the previous state
         if (currentState != monitor.previousState) {
             //  "RUNNING"   !=  "STOPPED"  → TRUE !
             
-            // 🎉 CHANGEMENT DÉTECTÉ !
+            // 🎉 CHANGE DETECTED!
             Serial.print("🔄 State change detected: ");
             Serial.print(monitor.moduleName);       // "Conveyor"
             Serial.print(" from ");
@@ -237,13 +237,13 @@ void StateManager::monitorAllStates() {
             Serial.print(" to ");
             Serial.println(currentState);           // "RUNNING"
             
-            // 3️⃣ APPLIQUER les règles
+            // 3️⃣ APPLY the rules
             checkStateRules("Conveyor", "STOPPED", "RUNNING");
             //   ↓
-            //   └─> Cherche une règle correspondante :
+            //   └─> Looks for a matching rule:
             //        module="Conveyor" + fromState="STOPPED" + toState="RUNNING"
             //        ↓
-            //        Règle trouvée :
+            //        Rule found:
             //        {
             //            module: "Conveyor",
             //            fromState: "STOPPED",
@@ -256,13 +256,13 @@ void StateManager::monitorAllStates() {
             //        ↓
             //        Serial: "ℹ️ [Conveyor] Motor started (detected from hardware)"
             
-            // 4️⃣ MÉMORISER le nouvel état
+            // 4️⃣ REMEMBER the new state
             monitor.previousState = currentState;  // "RUNNING"
             monitor.lastChangeTime = millis();
             monitor.isStuckWarningGiven = false;
         }
         else {
-            // 5️⃣ PAS DE CHANGEMENT : Vérifier si bloqué
+            // 5️⃣ NO CHANGE: check whether it is stuck
             if (millis() - monitor.lastChangeTime > 10000) {  // 10s
                 if (currentState != "WAITING" && currentState != "STOPPED") {
                     String msg = monitor.moduleName + " stuck in: " + currentState;
@@ -275,18 +275,18 @@ void StateManager::monitorAllStates() {
 }
 ```
 
-**Résultat après ÉTAPE 2 :**
+**Result after STEP 2:**
 
 ```
-StateManager.stateMonitors[0].previousState = "RUNNING"  // Mis à jour
+StateManager.stateMonitors[0].previousState = "RUNNING"  // Updated
 Console: "ℹ️ [Conveyor] Motor started (detected from hardware)"
 ```
 
 ---
 
-## 🔁 Cycle Complet : Démarrage du Moteur
+## 🔁 Full Cycle: Starting the Motor
 
-### Timeline Détaillée
+### Detailed Timeline
 
 ```
 T=0ms
@@ -301,14 +301,14 @@ main.loop()
       ↓
       _grbl.readStatus() → "I"  (Idle)
       ↓
-      _currentState = "STOPPED"  (pas de changement)
+      _currentState = "STOPPED"  (no change)
   ↓
   stateManager.monitorAllStates()
     ↓
     currentState = "STOPPED"
     previousState = "STOPPED"
     ↓
-    Pas de changement détecté
+    No change detected
   ↓
   delay(10)
 
@@ -319,14 +319,14 @@ main.loop()
   ↓
   M5.update()
   ↓
-  M5.BtnA.wasPressed() → TRUE  // Utilisateur appuie sur BtnA
+  M5.BtnA.wasPressed() → TRUE  // The user presses BtnA
   ↓
   conveyor.start()
     ↓
     _isRunning = true
     ↓
-    // Pas de modification de _currentState ici !
-    // C'est le hardware qui dicte l'état
+    // No change to _currentState here!
+    // The hardware decides the state
 
 
 T=600ms
@@ -337,7 +337,7 @@ main.loop()
     ↓
     readHardwareState()
       ↓
-      _grbl.readStatus() → "R"  (Running) ← Hardware a changé !
+      _grbl.readStatus() → "R"  (Running) ← The hardware has changed!
       ↓
       newState = "RUNNING"
       ↓
@@ -345,9 +345,9 @@ main.loop()
       ↓
       Serial: "🔄 Hardware: STOPPED → RUNNING"
       ↓
-      _currentState = "RUNNING"  ← ÉCRITURE !
+      _currentState = "RUNNING"  ← WRITE!
                       ↑
-                      À l'adresse 0x3FFC2A40
+                      At address 0x3FFC2A40
 
 
 T=610ms
@@ -356,7 +356,7 @@ main.loop()
   ↓
   stateManager.monitorAllStates()
     ↓
-    *statePtr = "RUNNING"  ← LIT à l'adresse 0x3FFC2A40
+    *statePtr = "RUNNING"  ← READ at address 0x3FFC2A40
     ↓
     currentState = "RUNNING"
     previousState = "STOPPED"
@@ -367,13 +367,13 @@ main.loop()
     ↓
     checkStateRules("Conveyor", "STOPPED", "RUNNING")
       ↓
-      Règle trouvée : STOPPED → RUNNING = ERROR_INFO
+      Rule found: STOPPED → RUNNING = ERROR_INFO
       ↓
       Error::triggerError("Motor started...", ERROR_INFO, "Conveyor")
       ↓
       Serial: "ℹ️ [Conveyor] Motor started (detected from hardware)"
     ↓
-    monitor.previousState = "RUNNING"  ← MÉMORISATION
+    monitor.previousState = "RUNNING"  ← REMEMBER
 
 
 T=620ms
@@ -381,141 +381,141 @@ T=620ms
 main.loop()
   ↓
   if (conveyor.getState() == CONVEYOR_STATE_RUNNING) {
-      //     ↑ Retourne _currentState = "RUNNING"
+      //     ↑ Returns _currentState = "RUNNING"
       conveyor.move(true);
       ↓
-      _grbl.setMotor(1, 0, 0, 1000);  ← Commande de mouvement
+      _grbl.setMotor(1, 0, 0, 1000);  ← Movement command
   }
 ```
 
 ---
 
-## 📋 Tableau Comparatif des Responsabilités
+## 📋 Responsibilities Comparison Table
 
-| Composant | Rôle | Écrit _currentState ? | Lit _currentState ? | Déclenche Erreurs ? |
+| Component | Role | Writes _currentState? | Reads _currentState? | Triggers Errors? |
 |-----------|------|----------------------|--------------------|--------------------|
-| **main.cpp** | Orchestration générale | ❌ | ✅ (via getState()) | ❌ |
-| **conveyor.cpp** | Interface hardware | ✅ (readHardwareState) | ✅ (getState) | ❌ |
-| **state_manager.cpp** | Surveillance automatique | ❌ | ✅ (via pointeur) | ✅ (via règles) |
+| **main.cpp** | General orchestration | ❌ | ✅ (via getState()) | ❌ |
+| **conveyor.cpp** | Hardware interface | ✅ (readHardwareState) | ✅ (getState) | ❌ |
+| **state_manager.cpp** | Automatic monitoring | ❌ | ✅ (via pointer) | ✅ (via rules) |
 
 ---
 
-## 🎯 Points Clés de l'Architecture
+## 🎯 Key Points of the Architecture
 
-### 1. **Source Unique de Vérité : Le Hardware**
+### 1. **Single Source of Truth: The Hardware**
 
 ```cpp
-// ❌ MAUVAISE APPROCHE (ancienne)
+// ❌ BAD APPROACH (old)
 void Conveyor::start() {
     _grbl.setMotor(...);
-    _currentState = "RUNNING";  // ← Assume que ça a marché
+    _currentState = "RUNNING";  // ← Assumes it worked
 }
 
-// ✅ BONNE APPROCHE (actuelle)
+// ✅ GOOD APPROACH (current)
 void Conveyor::start() {
     _grbl.setMotor(...);
-    // Pas de modification de _currentState ici !
-    // readHardwareState() s'en chargera à la prochaine lecture
+    // No change to _currentState here!
+    // readHardwareState() will handle it on the next read
 }
 ```
 
-**Avantage** : Si le hardware refuse de démarrer (alarme, erreur), l'état reste "STOPPED" automatiquement.
+**Advantage**: If the hardware refuses to start (alarm, error), the state automatically stays at "STOPPED".
 
 ---
 
-### 2. **Séparation Lecture/Écriture**
+### 2. **Read/Write Separation**
 
 ```
-conveyor.cpp          → ÉCRIT dans _currentState (selon hardware)
-state_manager.cpp     → LIT _currentState (via pointeur)
-main.cpp              → LIT _currentState (via getState())
+conveyor.cpp          → WRITES into _currentState (based on the hardware)
+state_manager.cpp     → READS _currentState (via pointer)
+main.cpp              → READS _currentState (via getState())
 ```
 
-**Avantage** : Pas de risque de conflit d'écriture.
+**Advantage**: No risk of write conflicts.
 
 ---
 
-### 3. **Détection par Comparaison**
+### 3. **Detection by Comparison**
 
 ```cpp
-// StateManager garde une COPIE de l'état précédent
+// StateManager keeps a COPY of the previous state
 monitor.previousState = "STOPPED";
 
-// À chaque cycle, compare avec l'état actuel
+// On each cycle, compare with the current state
 if (currentState != monitor.previousState) {
-    // Changement détecté !
+    // Change detected!
 }
 ```
 
-**Avantage** : Ne déclenche les règles qu'**une seule fois** par transition.
+**Advantage**: Triggers the rules only **once** per transition.
 
 ---
 
-### 4. **Règles Déclaratives**
+### 4. **Declarative Rules**
 
 ```cpp
-// Définir les règles au setup
+// Define the rules in setup
 stateManager.addStateRule("Conveyor", "STOPPED", "RUNNING", 
                           ERROR_INFO, "Motor started");
 
-// Elles s'appliquent automatiquement dans monitorAllStates()
+// They are applied automatically in monitorAllStates()
 ```
 
-**Avantage** : Centralisation de toute la logique de surveillance.
+**Advantage**: All the monitoring logic is centralized.
 
 ---
 
-## 🔍 Flux de Données Simplifié
+## 🔍 Simplified Data Flow
 
 ```
 ┌─────────┐
-│  GRBL   │  Hardware physique
-│ Module  │  État réel : 'I', 'R', 'A'
+│  GRBL   │  Physical hardware
+│ Module  │  Real state: 'I', 'R', 'A'
 └────┬────┘
      │ readStatus()
      ↓
 ┌─────────────────────────┐
 │ Conveyor::readHardwareState() │
 │                         │
-│ Mapping :               │
+│ Mapping:                │
 │  'I' → "STOPPED"        │
 │  'R' → "RUNNING"        │
 │  'A' → "ALARM"          │
 │                         │
-│ ↓ Écrit dans            │
+│ ↓ Writes into           │
 │ _currentState           │
 └────┬────────────────────┘
-     │ Adresse : 0x3FFC2A40
+     │ Address: 0x3FFC2A40
      ↓
 ┌─────────────────────────┐
 │ StateManager            │
 │                         │
-│ Lit via pointeur :      │
+│ Reads via pointer:      │
 │ *statePtr = _currentState│
 │                         │
-│ Compare :               │
+│ Compares:               │
 │ currentState ≠ previousState│
 │                         │
-│ ↓ Si différent          │
+│ ↓ If different          │
 │ checkStateRules()       │
 └────┬────────────────────┘
      ↓
 ┌─────────────────────────┐
 │ Error::triggerError()   │
 │                         │
-│ Affiche le message      │
-│ Applique les actions    │
+│ Displays the message    │
+│ Applies the actions     │
 └─────────────────────────┘
 ```
 
 ---
 
-## 🛠️ Exemple de Debug
+## 🛠️ Debug Example
 
-### Ajouter des Traces pour Vérifier le Flux
+### Adding Traces to Check the Flow
 
 ```cpp
-// Dans conveyor.cpp
+// In conveyor.cpp
 String Conveyor::readHardwareState() {
     String newState = /* ... */;
     
@@ -534,7 +534,7 @@ String Conveyor::readHardwareState() {
 ```
 
 ```cpp
-// Dans state_manager.cpp
+// In state_manager.cpp
 void StateManager::monitorAllStates() {
     for (StateMonitor& monitor : stateMonitors) {
         String* statePtr = static_cast<String*>(monitor.stateVariable);
@@ -550,7 +550,7 @@ void StateManager::monitorAllStates() {
 }
 ```
 
-**Sortie attendue :**
+**Expected output:**
 
 ```
 [CONVEYOR] Write to address 3FFC2A40: STOPPED → RUNNING
@@ -559,30 +559,30 @@ void StateManager::monitorAllStates() {
 ℹ️ [Conveyor] Motor started (detected from hardware)
 ```
 
-**Preuve que les deux pointent vers la même adresse !** ✅
+**Proof that both point to the same address!** ✅
 
 ---
 
-## 📚 Résumé des Flux
+## 📚 Flow Summary
 
-### Flux 1 : Commande Utilisateur → Hardware
+### Flow 1: User Command → Hardware
 
 ```
-BtnA pressé
+BtnA pressed
   ↓
 main.cpp: conveyor.start()
   ↓
 conveyor.cpp: _grbl.setMotor(...)
   ↓
-Module GRBL reçoit la commande
+GRBL module receives the command
   ↓
-Hardware démarre physiquement
+Hardware physically starts
 ```
 
-### Flux 2 : Hardware → État Interne
+### Flow 2: Hardware → Internal State
 
 ```
-Module GRBL en mouvement
+GRBL module moving
   ↓
 conveyor.cpp: monitorHardware()
   ↓
@@ -593,20 +593,20 @@ Mapping: "R" → "RUNNING"
 _currentState = "RUNNING"
 ```
 
-### Flux 3 : État Interne → Détection → Action
+### Flow 3: Internal State → Detection → Action
 
 ```
-_currentState = "RUNNING" (à l'adresse 0x3FFC2A40)
+_currentState = "RUNNING" (at address 0x3FFC2A40)
   ↓
 state_manager.cpp: monitorAllStates()
   ↓
-Lit via pointeur: *statePtr → "RUNNING"
+Reads via pointer: *statePtr → "RUNNING"
   ↓
-Compare: "RUNNING" ≠ "STOPPED" (previousState)
+Compares: "RUNNING" ≠ "STOPPED" (previousState)
   ↓
 checkStateRules("Conveyor", "STOPPED", "RUNNING")
   ↓
-Règle trouvée: ERROR_INFO
+Rule found: ERROR_INFO
   ↓
 Error::triggerError("Motor started...", ERROR_INFO, "Conveyor")
   ↓
@@ -617,20 +617,20 @@ Console: "ℹ️ [Conveyor] Motor started (detected from hardware)"
 
 ## 🎓 Conclusion
 
-**Architecture en 3 couches :**
+**3-layer architecture:**
 
-1. **main.cpp** : Chef d'orchestre qui coordonne
-2. **conveyor.cpp** : Expert hardware qui lit et écrit l'état réel
-3. **state_manager.cpp** : Surveillant qui observe et réagit
+1. **main.cpp**: Orchestrator that coordinates everything
+2. **conveyor.cpp**: Hardware expert that reads and writes the real state
+3. **state_manager.cpp**: Watcher that observes and reacts
 
-**Principe fondamental :**
-> Le hardware est la source de vérité.  
-> Le code s'adapte au hardware, pas l'inverse.
+**Core principle:**
+> The hardware is the source of truth.  
+> The code adapts to the hardware, not the other way around.
 
-**Bénéfices :**
-- ✅ Détection automatique des problèmes hardware
-- ✅ Pas de désynchronisation possible
-- ✅ Code déclaratif et maintenable
-- ✅ Centralisation de la logique de surveillance
+**Benefits:**
+- ✅ Automatic detection of hardware problems
+- ✅ No possible desynchronization
+- ✅ Declarative and maintainable code
+- ✅ Centralized monitoring logic
 
 ---

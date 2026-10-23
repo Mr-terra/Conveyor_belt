@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: API Gestion Produits & Stocks
-  description: Documentation Swagger de l'API avec authentification via DOLAPIKEY
+  description: Swagger documentation of the API, authenticated with DOLAPIKEY
   version: 1.0.0
 
 servers:
@@ -20,16 +20,16 @@ security:
 paths:
   /users/info:
     get:
-      summary: Récupérer les informations de l'utilisateur courant
+      summary: Get the current user's information
       tags:
         - Users
       responses:
         "200":
-          description: Informations utilisateur récupérées avec succès
+          description: User information retrieved successfully
 
   /warehouses/{id}:
     get:
-      summary: Récupérer un entrepôt par ID
+      summary: Get a warehouse by ID
       tags:
         - Warehouses
       parameters:
@@ -40,13 +40,13 @@ paths:
             type: integer
       responses:
         "200":
-          description: Entrepôt trouvé
+          description: Warehouse found
         "404":
-          description: Entrepôt non trouvé
+          description: Warehouse not found
 
   /products:
     get:
-      summary: Rechercher des produits avec filtres SQL
+      summary: Search products with SQL filters
       tags:
         - Products
       parameters:
@@ -58,10 +58,10 @@ paths:
           example: "(barcode:=:'041D19DA700000')"
       responses:
         "200":
-          description: Liste des produits
+          description: List of products
 
     post:
-      summary: Créer un produit
+      summary: Create a product
       tags:
         - Products
       requestBody:
@@ -108,11 +108,11 @@ paths:
                       example: "3"
       responses:
         "201":
-          description: Produit créé avec succès
+          description: Product created successfully
 
   /products/{id}/stock:
     get:
-      summary: Récupérer le stock d'un produit
+      summary: Get the stock of a product
       tags:
         - Products
       parameters:
@@ -123,11 +123,11 @@ paths:
             type: integer
       responses:
         "200":
-          description: Stock du produit
+          description: Product stock
 
   /stockmovements:
     post:
-      summary: Créer un mouvement de stock
+      summary: Create a stock movement
       tags:
         - Stock
       requestBody:
@@ -152,11 +152,11 @@ paths:
                   example: 1
       responses:
         "201":
-          description: Mouvement de stock créé
+          description: Stock movement created
 
   /warehouses:
     post:
-      summary: Créer un entrepôt
+      summary: Create a warehouse
       tags:
         - Warehouses
       requestBody:
@@ -170,7 +170,7 @@ paths:
               properties:
                 label:
                   type: string
-                  example: Entrepôt A
+                  example: Warehouse A
       responses:
         "201":
-          description: Entrepôt créé
+          description: Warehouse created

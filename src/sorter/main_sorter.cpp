@@ -15,7 +15,7 @@ static ServoSorter servo;
 
 SorterController sorterController;
 
-// ✅ VRAIE signature utilisée par le StateManager.cpp (String*)
+// ✅ REAL signature used by StateManager.cpp (String*)
 static String sorterStateToStringPtr(String *s)
 {
   return (s && s->length()) ? *s : String("");
@@ -80,7 +80,7 @@ void SorterController::production()
   Serial.print("UID: ");
   Serial.println(uidRead);
 
-  Bin::Id bin = adresser.resolve(uidRead);
+  Bin::Id bin = addresser.resolve(uidRead);
   Serial.print("Bin return: ");
   Serial.println((int)bin);
   if (bin == Bin::NONE)

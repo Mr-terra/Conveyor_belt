@@ -1,31 +1,31 @@
 
-# Configuration pour ESP32 avec Arduino framework
+# Configuration for ESP32 with the Arduino framework
 set(ARDUINO_BOARD "m5stack-grey")
 set(ARDUINO_PLATFORM "espressif32")
 set(ARDUINO_FRAMEWORK "arduino")
 
-# Chemin vers l'installation Arduino
+# Path to the Arduino installation
 set(ARDUINO_PATH "$ENV{HOME}/Arduino" CACHE PATH "Path to Arduino installation")
 
-# Configuration des chemins
+# Path configuration
 set(ARDUINO_LIBRARY_PATH "${ARDUINO_PATH}/libraries")
 set(ARDUINO_TOOLS_PATH "${ARDUINO_PATH}/hardware/espressif/esp32/tools")
 set(ARDUINO_CORE_PATH "${ARDUINO_PATH}/hardware/espressif/esp32")
 
-# Configuration du compilateur
+# Compiler configuration
 set(CMAKE_C_COMPILER "${ARDUINO_TOOLS_PATH}/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc")
 set(CMAKE_CXX_COMPILER "${ARDUINO_TOOLS_PATH}/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++")
 
-# Sources du projet
+# Project sources
 file(GLOB_RECURSE PROJECT_SOURCES
     "*.cpp"
     "*.c"
 )
 
-# Création de l'exécutable
+# Create the executable
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
-# Configuration des includes
+# Include configuration
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
@@ -38,7 +38,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${ARDUINOJSON_PATH}/src
 )
 
-# Définitions spécifiques
+# Specific definitions
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     ARDUINO=10813
     ESP32
@@ -48,7 +48,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     DOLIBARR_API_KEY="\"${DOLIBARR_API_KEY}\""
 )
 
-# Options de compilation
+# Compilation options
 target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall
     -Wextra
@@ -60,7 +60,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -mtext-section-literals
 )
 
-# Liaison avec les bibliothèques Arduino
+# Linking with the Arduino libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     "-L${ARDUINO_TOOLS_PATH}/xtensa-esp32-elf/lib"
     "-T${ARDUINO_CORE_PATH}/tools/sdk/esp32/ld/esp32.out.ld"
@@ -73,7 +73,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     "-Wl,--end-group"
 )
 
-# Configuration du linkage
+# Linker configuration
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LINK_FLAGS "-Wl,--gc-sections -Wl,--undefined=uxTopUsedPriority"
     SUFFIX ".elf"

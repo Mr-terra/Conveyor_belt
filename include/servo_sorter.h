@@ -9,15 +9,15 @@ public:
     void init(StateManager &stateManager);
     void moveTo(Bin::Id bin);
     
-    // Health check - vérifie que le servo répond
+    // Health check - verifies that the servo responds
     static bool checkConnection();
 
 private:
     int angleFor(Bin::Id bin) const;
 
-    // État interne observable
+    // Observable internal state
     String servoState = "INIT";
 
-    // utilitaire pour StateManager
+    // Helper for StateManager
     static String stateToString(String s);
 };

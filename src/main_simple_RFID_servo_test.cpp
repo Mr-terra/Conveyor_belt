@@ -14,7 +14,7 @@
 // // ---------------- GOPlus2 / Servo ----------------
 // GoPlus2 goPlus;
 
-// // Sur GoPlus2 : SERVO_NUM0..3 correspondent généralement à S1..S4
+// // On GoPlus2: SERVO_NUM0..3 usually map to S1..S4
 // #define SERVO_CH SERVO_NUM0
 // #define SERVO_0 0
 // #define SERVO_90 90
@@ -60,7 +60,7 @@
 //     // Init RFID
 //     mfrc522.PCD_Init();
 
-//     Serial.println("Init OK (RFID + GOPlus2). Approche une carte...");
+//     Serial.println("Init OK (RFID + GOPlus2). Bring a card close...");
 // }
 
 // void loop()

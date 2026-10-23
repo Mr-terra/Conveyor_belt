@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-// Forward declarations pour éviter les includes circulaires
+// Forward declarations to avoid circular includes
 class DolibarrAPI;
 class Conveyor;
 class SorterController;
@@ -12,17 +12,17 @@ class CheckConnect {
 public:
     bool checkConnections();
     
-    // Méthodes individuelles (peuvent être utilisées séparément)
+    // Individual methods (can be used separately)
     bool checkDolibarrConnection();
     bool checkMotorConnection();
     bool checkSorterConnection();
     
-    // Setters pour les dépendances (DOIVENT être appelés avant checkConnections)
+    // Setters for the dependencies (MUST be called before checkConnections)
     void setDolibarrAPI(DolibarrAPI* api);
     void setConveyor(Conveyor* conveyor);
     void setSorterController(SorterController* sorter);
     
-    // Vérification que toutes les dépendances sont configurées
+    // Checks that all dependencies are configured
     bool areDependenciesConfigured();
 
 private:

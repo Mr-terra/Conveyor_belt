@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dolibarr_api.h"
-#include "adresser.h"
+#include "addresser.h"
 
 #ifndef DOLIBARR_URL
 #error "DOLIBARR_URL not defined"
@@ -11,4 +11,4 @@
 #endif
 
 extern DolibarrAPI dolibarrApi;
-extern Adresser adresser;
+extern Addresser addresser;

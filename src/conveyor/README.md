@@ -1,20 +1,20 @@
 ┌─────────────────────────────────────────────────┐
-│  1. monitorHardware() (toutes les 50ms)        │
-│     ↓                                            │
+│  1. monitorHardware() (every 50ms)              │
+│     ↓                                           │
 │  2. readHardwareState()                         │
 │     • _grbl.readSpeed()                         │
 │     • _grbl.readPosition()                      │
-│     • _grbl.getState() (si disponible)          │
-│     ↓                                            │
-│  3. Mise à jour automatique de conveyorState    │
-│     (basé sur hardware)                         │
-│     ↓                                            │
+│     • _grbl.getState() (if available)           │
+│     ↓                                           │
+│  3. Automatic update of conveyorState           │
+│     (based on hardware)                         │
+│     ↓                                           │
 │  4. stateManager.monitorAllStates()             │
-│     • Détecte le changement d'état              │
-│     ↓                                            │
+│     • Detects the state change                  │
+│     ↓                                           │
 │  5. checkStateRules()                           │
-│     • Compare avec les rules définies           │
-│     ↓                                            │
+│     • Compares with the defined rules           │
+│     ↓                                           │
 │  6. Error::triggerError()                       │
-│     • Log l'événement avec le bon niveau        │
+│     • Logs the event with the right level       │
 └─────────────────────────────────────────────────┘

@@ -14,10 +14,10 @@ private:
     String performPOST(String url, String body);
 
 public:
-    // Constructeur
+    // Constructor
     DolibarrAPI(String url, String key);
 
-    // Vérification connexion API
+    // API connection check
     boolean checkConnection();
 
     // Produits
@@ -26,7 +26,7 @@ public:
     // Stock
     String createStockMovement(int productId, int warehouseId, int qty);
 
-    // Entrepôts
+    // Warehouses
     String checkWarehouse(int warehouseId);
 };
 

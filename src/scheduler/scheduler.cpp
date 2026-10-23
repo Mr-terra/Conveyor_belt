@@ -30,7 +30,7 @@ String Scheduler::stateToString(String state)
     return "UNKNOWN";
 }
 
-// Pointeurs vers les dépendances
+// Pointers to the dependencies
 static CheckConnect* _checkConnect = nullptr;
 static InitPosition* _initPosition = nullptr;
 static SorterController* _sorterController = nullptr;
@@ -101,20 +101,20 @@ void Scheduler::triggerStop()
     }
 }
 
-// Méthode principale pour exécuter la logique de l'état courant
+// Main method that runs the logic of the current state
 void Scheduler::executeCurrentState() {
-    // Gestion prioritaire de l'état ERROR
+    // ERROR state is handled first
     if (_current_state == STATE_ERROR) {
         Serial.println("⚠️  System in ERROR state - checking recovery conditions");
         
-        // Vérifier si nous pouvons sortir de l'état ERROR
+        // Check whether we can leave the ERROR state
         if (canRecoverFromError()) {
             Serial.println("🔧 Error conditions resolved - returning to WAITING");
             setState(STATE_WAITING);
         } else {
             Serial.println("🚫 Still in ERROR state - manual intervention may be required");
         }
-        return; // Ne pas exécuter d'autres états en mode ERROR
+        return; // Do not run other states in ERROR mode
     }
     
     if (_current_state == STATE_CHECK_CONNECT) {
@@ -152,7 +152,7 @@ void Scheduler::executeCurrentState() {
     else if (_current_state == STATE_PRODUCTION) {
         Serial.println("🏭 Executing PRODUCTION state");
         
-        // Vérifier l'état du conveyor avant de continuer
+        // Check the conveyor state before continuing
         if (_conveyor != nullptr && _conveyor->getState() == "ALARM") {
             Serial.println("❌ Conveyor in ALARM state during production - stopping");
             setState(STATE_WAITING);
@@ -167,26 +167,26 @@ void Scheduler::executeCurrentState() {
         }
     }
     else if (_current_state == STATE_WAITING) {
-        // Dans l'état WAITING, le système est prêt mais n'exécute rien
+        // In the WAITING state, the system is ready but does nothing
         Serial.println("⏳ System in WAITING state - ready for operation");
     }
 }
 
-// Vérifier si nous pouvons sortir de l'état ERROR
+// Check whether we can leave the ERROR state
 bool Scheduler::canRecoverFromError() {
     if (_checkConnect == nullptr || _conveyor == nullptr) {
         Serial.println("   Cannot recover - dependencies not configured");
         return false;
     }
     
-    // Vérifier que les connexions sont OK
+    // Check that the connections are OK
     bool connectionsOk = _checkConnect->checkConnections();
     if (!connectionsOk) {
         Serial.println("   Cannot recover - connection check failed");
         return false;
     }
     
-    // Vérifier que le conveyor n'est pas en ALARM
+    // Check that the conveyor is not in ALARM
     if (_conveyor->getState() == "ALARM") {
         Serial.println("   Cannot recover - conveyor still in ALARM state");
         return false;
