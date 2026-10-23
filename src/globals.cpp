@@ -1,4 +1,5 @@
 #include "globals.h"
 
-DolibarrAPI dolibarrApi(DOLIBARR_URL, DOLIBARR_API_KEY);
+// Endpoint and key are set from flash in setup(), see setEndpoint()
+DolibarrAPI dolibarrApi("", "");
 Addresser addresser;

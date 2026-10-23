@@ -20,6 +20,9 @@ public:
     // Constructor
     DolibarrAPI(String url, String key);
 
+    // Sets the server and key once they are known (read from flash at boot)
+    void setEndpoint(String url, String key);
+
     // Injects the HTTP transport and the network link. Must be called before use.
     void setTransport(IHttpClient *http, INetwork *network);
 

@@ -13,13 +13,7 @@
 #include "addresser.h"
 #include "globals.h"
 #include "hal/firmware_hal.h"
-
-#ifndef WIFI_SSID
-#error "WIFI_SSID not defined"
-#endif
-#ifndef WIFI_PASS
-#error "WIFI_PASS not defined"
-#endif
+#include "hal/device_config.h"
 
 extern Conveyor conveyor;
 extern Scheduler scheduler;
@@ -58,18 +52,31 @@ void setup()
     addresser.setDolibarrAPI(&dolibarrApi);
     Serial.printf("[SETUP] &addresser=%p  &dolibarrApi=%p\n", (void *)&addresser, (void *)&dolibarrApi);
 
-    // 1) WiFi
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-    if (!waitWifi())
+    // 1) Settings from flash, then WiFi
+    DeviceConfig config = loadDeviceConfig();
+    if (config.hasDolibarr())
     {
-        Serial.println("❌ WiFi connect timeout");
+        dolibarrApi.setEndpoint(config.dolibarrUrl, config.dolibarrApiKey);
+    }
+
+    if (!config.hasWifi())
+    {
+        printProvisioningHelp();
     }
     else
     {
-        Serial.print("✅ WiFi OK, IP=");
-        Serial.println(WiFi.localIP());
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(config.wifiSsid.c_str(), config.wifiPass.c_str());
+
+        if (!waitWifi())
+        {
+            Serial.println("❌ WiFi connect timeout");
+        }
+        else
+        {
+            Serial.print("✅ WiFi OK, IP=");
+            Serial.println(WiFi.localIP());
+        }
     }
 
     // 2) Inject ALL dependencies BEFORE initializing the scheduler
@@ -115,6 +122,7 @@ void updateDisplay()
 void loop()
 {
     M5.update();
+    processProvisioningInput();
 
     conveyor.monitorHardware();
     stateManager.monitorAllStates();
