@@ -114,7 +114,7 @@ The unit tests run on the PC, not on the ESP32. They use the fake Arduino core i
 `test/host/include/` and gMock doubles for every interface in `include/hal/`.
 
 ```bash
-cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_FIRMWARE=OFF
+cmake -S . -B build -DBUILD_TESTS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```

@@ -8,7 +8,7 @@ Unit tests run on the PC, not on the ESP32:
 
 Build and run (googletest and ArduinoJson are fetched automatically):
 
-    cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_FIRMWARE=OFF
+    cmake -S . -B build -DBUILD_TESTS=ON
     cmake --build build
     ctest --test-dir build --output-on-failure
 

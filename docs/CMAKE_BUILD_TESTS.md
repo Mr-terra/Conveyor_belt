@@ -204,7 +204,7 @@ ctest -R ConveyorTest
 To build only the tests (firmware disabled, as in CI):
 
 ```bash
-cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_FIRMWARE=OFF
+cmake -S . -B build -DBUILD_TESTS=ON
 cmake --build build
 ```
 

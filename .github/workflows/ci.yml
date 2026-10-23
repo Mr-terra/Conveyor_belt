@@ -21,7 +21,7 @@ jobs:
         sudo apt-get install -y cmake build-essential
 
     - name: Configure CMake for tests
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTS=ON -DBUILD_FIRMWARE=OFF
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTS=ON
 
     - name: Build tests
       run: cmake --build build --config ${{ env.BUILD_TYPE }}
