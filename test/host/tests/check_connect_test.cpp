@@ -54,6 +54,16 @@ TEST_F(CheckConnectTest, AllDevicesHealthyPassesChecks)
     EXPECT_TRUE(checkConnect.checkConnections());
 }
 
+TEST_F(CheckConnectTest, DolibarrErrorFailsChecks)
+{
+    ON_CALL(http, get(_, _)).WillByDefault(Return(HttpResponse{500, String()}));
+    checkConnect.setDolibarrAPI(&api);
+    checkConnect.setConveyor(&conveyor);
+    checkConnect.setSorterController(&sorterController);
+
+    EXPECT_FALSE(checkConnect.checkConnections());
+}
+
 TEST_F(CheckConnectTest, GrblNotAcknowledgingFailsMotorCheck)
 {
     checkConnect.setDolibarrAPI(&api);

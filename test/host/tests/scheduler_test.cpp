@@ -28,6 +28,8 @@ protected:
         // Healthy hardware by default: GRBL answers "Idle", every I2C device acknowledges.
         ON_CALL(motor, readStatus()).WillByDefault(Return(String("I")));
         ON_CALL(bus, probe(_)).WillByDefault(Return(0));
+        ON_CALL(network, isConnected()).WillByDefault(Return(true));
+        ON_CALL(http, get(_, _)).WillByDefault(Return(HttpResponse{200, String("{}")}));
 
         conveyor.setHardware(&motor, &bus);
         sorterController.setHardware(&rfid, &servo, &bus);

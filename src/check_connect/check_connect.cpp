@@ -54,13 +54,11 @@ bool CheckConnect::checkConnections()
     }
 
     // Check all connections using instance methods
-    // bool dolibarrOk = checkDolibarrConnection();
+    bool dolibarrOk = checkDolibarrConnection();
     bool motorOk = checkMotorConnection();
     bool sorterOk = checkSorterConnection();
 
-    // bool allOk = dolibarrOk && motorOk && sorterOk;
-
-    bool allOk = motorOk && sorterOk;
+    bool allOk = dolibarrOk && motorOk && sorterOk;
     if (allOk)
     {
         Serial.println("✅ === All connections OK ===\n");
