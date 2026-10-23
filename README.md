@@ -166,7 +166,7 @@ The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_K
 │   └── hal/firmware/       ESP32 implementations of the hardware interfaces
 ├── test/host/              Host unit tests, gMock doubles and fake Arduino core
 ├── docs/                   Architecture, test protocol, usage and build docs
-└── lib/M5Stack_lib/        Vendored M5Stack library (third-party)
+└── lib/GoPlus2/            Vendored GoPlus2 servo driver (third-party, not in the PlatformIO registry)
 ```
 
 Further documentation is in `docs/`: system usage (`SYSTEM_USAGE.md`), build and test
@@ -179,5 +179,5 @@ No license has been chosen yet. Until one is added, all rights are reserved by t
 
 ## Acknowledgements
 
-- [M5Stack](https://github.com/m5stack) libraries (vendored in `lib/M5Stack_lib`)
+- [M5Stack](https://github.com/m5stack) libraries (PlatformIO registry) and the GoPlus2 driver (`lib/GoPlus2`)
 - [googletest](https://github.com/google/googletest) and [ArduinoJson](https://arduinojson.org)
