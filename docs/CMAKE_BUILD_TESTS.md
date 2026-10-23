@@ -38,7 +38,6 @@ conveyor/
 │   │   ├── include/Arduino.h      # Fake Arduino core for the PC build
 │   │   ├── fakes/                 # gMock doubles of the HAL interfaces
 │   │   └── tests/                 # Unit tests (*_test.cpp)
-│   └── test_integration.cpp       # Arduino-style integration sketch
 ├── include/                        # Header files
 │   └── hal/                       # Hardware abstraction interfaces
 ├── lib/                           # External libraries
@@ -211,13 +210,9 @@ cmake --build build
 
 ### 4.2. Integration tests
 
-The integration tests are located in `test/test_integration.cpp`.
-
-To run the integration tests:
-
-```bash
-./test/test_integration
-```
+The integration scenarios (StateManager <-> Scheduler <-> Conveyor) are in
+`test/host/tests/state_manager_test.cpp` and `test/host/tests/scheduler_test.cpp`.
+They run with the unit tests, so there is no separate command.
 
 ## 5. CI/CD configuration
 
