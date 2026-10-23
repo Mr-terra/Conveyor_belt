@@ -56,12 +56,11 @@ Run before production, after Button A.
 |-------|--------------|--------|
 | GRBL motor | I2C probe at `0x70`, status must answer, module must not be locked | Active |
 | Sorter | RFID probe at `0x28` and servo board probe at `0x38` | Active |
-| Dolibarr | HTTP check of the API | **Implemented but disabled** in `checkConnections()` |
+| Dolibarr | HTTP check of the API, must answer 200 | Active |
 
-The Dolibarr check is commented out in `checkConnections()` (`src/check_connect/check_connect.cpp`).
-So with Button A, the system does **not** check that Dolibarr answers. The check still runs once at
-boot from `loop()`, and it only logs the result (`✅ Dolibarr OK` or `❌ Dolibarr FAIL`). A parcel
-whose lookup fails goes to the error bin (section 7).
+If any check fails, Start goes back to `WAITING`. The same Dolibarr check also runs once at boot from
+`loop()` and logs `✅ Dolibarr OK` or `❌ Dolibarr FAIL`. A parcel whose lookup fails goes to the error
+bin (section 7).
 
 ## 5. Init Position
 
@@ -119,7 +118,7 @@ The error bin is shared with warehouse 1. The serial log is the only way to tell
 When a conveyor state changes, `StateManager` runs the matching rules:
 
 - A change to ALARM matches two rules: CRITICAL (from RUNNING or STOPPED) and FATAL (from any state).
-  During production this ends in **ERROR**, not WAITING. See the open point in section 11.
+  During production the final state is **ERROR**, not WAITING. The belt is stopped either way.
 - Automatic recovery never clears a latched critical error. It is cleared only when the operator
   presses **A** from ERROR or WAITING.
 - The stuck warning (WARNING) fires after 5 s in a transitional state. Steady states (WAITING,
@@ -135,17 +134,11 @@ When a conveyor state changes, `StateManager` runs the matching rules:
 Requests use the `DOLAPIKEY` header. Each request has a 5 s timeout. The stock-movement call
 returns true only for HTTP 200 or 201.
 
-## 11. Open points
+## 11. Known limits
 
-1. **Dolibarr is not checked at Start.** The check is disabled in `checkConnections()`. Decide
-   whether to re-enable it.
-2. **An alarm during production ends in ERROR, not WAITING.** Both rules fire. The safe outcome
-   (belt stopped, Start needed) is the same, but the test name and the older documents describe
-   WAITING.
-3. **Servo parks at 30° at boot,** the same angle as BIN2. A parcel is not expected to be on the
-   diverter at boot, but this should be checked on the machine.
-4. **The error bin is shared with warehouse 1.** Parcels in error and parcels for warehouse 1 end up
+1. **Servo parks at 30° at boot,** the same angle as BIN2. This has not been checked on a machine.
+2. **The error bin is shared with warehouse 1.** Parcels in error and parcels for warehouse 1 end up
    in the same bin.
-5. **No hardware emergency stop.** Button B stops in software only.
-6. **Init Position is a placeholder.**
-7. **Not yet run on the hardware.** See [TEST_PROTOCOL.md](TEST_PROTOCOL.md) section 3.
+3. **No hardware emergency stop.** Button B stops in software only.
+4. **Init Position is a placeholder.**
+5. **Not run on the hardware.** See [TEST_PROTOCOL.md](TEST_PROTOCOL.md) section 3.

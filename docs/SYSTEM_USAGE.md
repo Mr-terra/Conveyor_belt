@@ -50,7 +50,7 @@ WAITING ──(A)──▶ CHECK_CONNECT ──ok──▶ INIT_POSITIONS ──
 3. Watch the serial monitor (115200 baud). The start-up log should show:
    - `✅ WiFi OK, IP=...`, once the board has joined the Wi-Fi network.
    - `✅ Dolibarr OK`, once the Dolibarr API has answered. If it shows `❌ Dolibarr FAIL`, the
-     board keeps running, but no parcel can be looked up. Fix the URL or the key, then reflash.
+     board keeps running, but Start stops at the connection check until the API answers. Fix the URL or the key, then reflash.
 
 The Wi-Fi network, the Dolibarr URL and the API key come from the `.env` file at build time.
 They are not editable on the device. To change them, edit `.env`, rebuild and reflash.

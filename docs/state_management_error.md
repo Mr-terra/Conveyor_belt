@@ -90,15 +90,14 @@ FATAL rule (`* → ALARM`). `handleCriticalStateChange` runs for each match, in 
 1. CRITICAL: if the scheduler is in `PRODUCTION`, it goes to `WAITING`.
 2. FATAL: the scheduler goes to `ERROR`.
 
-So in the current firmware an alarm during production ends in **`ERROR`**, not `WAITING`. Both
-states stop the belt and need **A** to restart, and the critical latch is kept either way. The
-host test `ConveyorAlarmDuringProductionReturnsSchedulerToWaiting` installs only the CRITICAL
-rule, so it does not show this. See the open point in section 8.
+So in the current firmware an alarm during production ends in **`ERROR`**, not `WAITING`. The belt
+is stopped and **A** is needed to restart, and the critical latch is kept. The host test
+`ConveyorAlarmDuringProductionEndsInError` checks this with the real rules.
 
 ## 6. Scheduler and recovery
 
 - `WAITING`: nothing is driven. **A** starts `CHECK_CONNECT`.
-- `CHECK_CONNECT`: checks the GRBL module, the RFID reader and the servo board (the Dolibarr check is disabled). On
+- `CHECK_CONNECT`: checks Dolibarr, the GRBL module, the RFID reader and the servo board. On
   success it goes to `INIT_POSITIONS`; on failure, back to `WAITING`.
 - `INIT_POSITIONS`: placeholder steps; success moves to `PRODUCTION`.
 - `PRODUCTION`: the conveyor runs and the sorter handles each card. An alarm stops it (section 5).
@@ -118,8 +117,5 @@ The warning is `ERROR_WARNING` and is given once per stay in the state.
 
 ## 8. Open points
 
-- **Alarm during production goes to `ERROR`, not `WAITING`** (section 5). The behaviour is safe, but
-  it is not what the test name says. Decide which one is wanted: keep both rules and rename the test,
-  or drop the `* → ALARM` rule for `RUNNING` and `STOPPED`.
 - **No hardware emergency stop.** The software stop (button **B**) cuts the command, not the power.
 - **`InitPosition` is a placeholder** and does not check the hardware.

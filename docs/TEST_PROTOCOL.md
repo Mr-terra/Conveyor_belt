@@ -16,7 +16,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-The current suite has **98 tests** in 11 files, all passing. CI runs the same commands on every
+The current suite has **99 tests** in 11 files, all passing. CI runs the same commands on every
 push to `main`.
 
 ### Coverage by module
@@ -25,9 +25,9 @@ push to `main`.
 |--------|------|------:|-----------------|
 | Error | `error_test.cpp` | 7 | Callbacks, levels, critical latch, log format |
 | Conveyor | `conveyor_test.cpp` | 21 | GRBL status mapping, lock/idle fallback, silent-module watchdog (ALARM after 10 missed reads), start/stop/move commands, speed clamping, connection checks |
-| State manager | `state_manager_test.cpp` | 10 | Rules on transitions, stuck-state warnings, conveyor alarm during production (back to WAITING), fatal alarm (ERROR) |
+| State manager | `state_manager_test.cpp` | 10 | Rules on transitions, stuck-state warnings, conveyor alarm during production (ends in ERROR, using the real rules), fatal alarm (ERROR) |
 | Scheduler | `scheduler_test.cpp` | 14 | Full sequence WAITING → CHECK_CONNECT → INIT_POSITIONS → PRODUCTION, failure paths, ERROR recovery, critical latch blocks recovery until cleared |
-| Check connect | `check_connect_test.cpp` | 9 | Each device check, Dolibarr reachability with and without Wi-Fi, unconfigured Dolibarr skipped |
+| Check connect | `check_connect_test.cpp` | 10 | Each device check, Dolibarr reachability with and without Wi-Fi, a Dolibarr error fails the checks, unconfigured Dolibarr skipped |
 | Init position | `init_position_test.cpp` | 1 | Placeholder steps succeed together |
 | Dolibarr API | `dolibarr_api_test.cpp` | 6 | Request URLs and API key header, transport failure returns empty body, stock movement JSON, connection check on 200 / 401 |
 | Addresser | `addresser_test.cpp` | 10 | Warehouse → bin routing, `warehouse_id` and `options_…` keys, unknown card and failed stock movement go to the error bin, malformed or empty responses |
@@ -58,7 +58,7 @@ caught by the host tests. Always run this before flashing.
 
 ## 3. Hardware acceptance protocol
 
-Run this after each firmware change, before the system is used. Use the serial monitor at
+Run this after each firmware change, before the system is used. **These steps have not been run** on the hardware: the project is no longer connected to a board. The table is kept as a reference for whoever tests it next. Use the serial monitor at
 115200 baud (`pio device monitor -e m5stack-grey`).
 
 Prerequisites: the `.env` file is filled in, the firmware is flashed, the GRBL module is at
@@ -67,7 +67,7 @@ Prerequisites: the `.env` file is filled in, the firmware is flashed, the GRBL m
 | # | Step | Expected result | Result |
 |---|------|-----------------|:------:|
 | H1 | Power on | Serial log shows `WiFi OK` and `Dolibarr OK`; screen shows `WAITING` | |
-| H2 | Power on with Dolibarr stopped | `Dolibarr FAIL` is logged; the board still runs, and Start is **not** blocked by Dolibarr (the check is disabled), so a lookup failure shows up on the first card read instead | |
+| H2 | Power on with Dolibarr stopped | `Dolibarr FAIL` is logged; the board still runs, and Start stops at the connection check and stays in `WAITING` | |
 | H3 | Press **A** | `CHECK_CONNECT` then `INIT_POSITIONS` then `PRODUCTION`; the conveyor moves forward | |
 | H4 | Present a known card | Log shows the UID and the warehouse ID, no `[ERR]` line, and the servo moves to the bin for that warehouse | |
 | H5 | Verify the stock movement in Dolibarr | A movement exists for the product, warehouse and quantity 1 | |
@@ -85,4 +85,4 @@ The servo angles in H11 are not validated yet. The values come from the code (`a
 
 | Date | Firmware commit | Automated tests | Hardware steps passed | Notes |
 |------|-----------------|-----------------|-----------------------|-------|
-| | | 98 / 98 expected | 0 / 11 | Not yet run on the hardware |
+| | | 99 / 99 (local build, GCC on Linux) | 0 / 11 (not run, no board access) | Hardware steps not run |
