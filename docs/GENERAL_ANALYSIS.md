@@ -1,5 +1,9 @@
 # General Analysis - IoT Conveyor Belt Project
 
+> **Note:** this is the initial design analysis, kept for reference. It predates the hardware
+> abstraction layer and several behaviour changes. For the current behaviour, see the
+> [README](../README.md), [SYSTEM_USAGE.md](SYSTEM_USAGE.md) and [state_management_error.md](state_management_error.md).
+
 ## Table of Contents
 
 1. [Understanding the Global Architecture](#understanding-the-global-architecture)
