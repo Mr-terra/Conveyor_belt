@@ -1,7 +1,11 @@
+# PlatformIO pre-build script: reads .env, checks the values, and writes env_config.h.
+# The generated header is force-included into every source file (see the end of this file).
+
 import os
 
 Import("env")
 
+# The four values the firmware needs at build time.
 REQUIRED_VARS = [
     "DOLIBARR_URL",
     "DOLIBARR_API_KEY",
@@ -10,6 +14,7 @@ REQUIRED_VARS = [
 ]
 
 
+# Reads KEY=VALUE lines. Blank lines and lines starting with '#' are skipped.
 def load_env_file(path):
     if not os.path.exists(path):
         raise Exception(f"[env_script] {path} not found")
@@ -28,6 +33,7 @@ def load_env_file(path):
             os.environ[key.strip()] = val
 
 
+# Turns a value into a C string literal: backslashes and quotes are escaped.
 def c_string_literal(value):
     if "\n" in value or "\r" in value:
         raise Exception("[env_script] values in .env must be on a single line")
@@ -45,6 +51,7 @@ def write_config_header(path):
         f.write("\n".join(lines) + "\n")
 
 
+# Reads .env from the project root, then fails early if a value is missing.
 load_env_file(os.path.join(env["PROJECT_DIR"], ".env"))
 
 missing = [var for var in REQUIRED_VARS if not os.getenv(var)]
@@ -55,6 +62,7 @@ print("[env_script] Loaded variables:")
 for var in REQUIRED_VARS:
     print(f"  - {var}: OK")
 
+# Written in the build directory, so it is never committed.
 config_header = os.path.join(env["PROJECT_DIR"], ".pio", "build", env["PIOENV"], "env_config.h")
 write_config_header(config_header)
 

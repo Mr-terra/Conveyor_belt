@@ -1,3 +1,6 @@
+// Addresser tests: warehouse routing, stock movement, the error bin, and bad Dolibarr answers.
+// Dolibarr is replaced by a mocked HTTP client.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

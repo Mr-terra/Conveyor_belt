@@ -15,7 +15,7 @@ FetchContent_MakeAvailable(googletest arduinojson)
 # are deliberately not listed: they only compile for the ESP32.
 set(HOST_LOGIC_SOURCES
     ${CMAKE_SOURCE_DIR}/src/error.cpp
-    ${CMAKE_SOURCE_DIR}/src/globals.cpp
+    ${CMAKE_SOURCE_DIR}/src/log.cpp
     ${CMAKE_SOURCE_DIR}/src/api/DolibarrAPI.cpp
     ${CMAKE_SOURCE_DIR}/src/check_connect/check_connect.cpp
     ${CMAKE_SOURCE_DIR}/src/conveyor/conveyor.cpp

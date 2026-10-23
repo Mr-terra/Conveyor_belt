@@ -1,3 +1,6 @@
+// Conveyor tests: GRBL status mapping, the silent-module watchdog,
+// motor commands, speed limits and the connection checks.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

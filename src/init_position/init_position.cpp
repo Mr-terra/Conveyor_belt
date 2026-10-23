@@ -1,11 +1,15 @@
+// InitPosition: placeholder for the position initialization before production.
+
 #include "init_position.h"
 #include <Arduino.h>
 
-InitPosition initPosition;
 
+// Nothing to set up yet. The method is kept so that the start-up sequence does not change
+// when the real steps are added.
 void InitPosition::initialize() {
 }
 
+// Both steps must pass for the scheduler to move on to PRODUCTION.
 bool InitPosition::initializePositions() {
     // Initialize positions
     bool paramsOk = loadMotorParameters();

@@ -1,3 +1,6 @@
+// StateManager tests: rules, stuck-state warnings, and the effect of a conveyor
+// alarm on the scheduler.
+
 #include <gtest/gtest.h>
 
 #include <vector>

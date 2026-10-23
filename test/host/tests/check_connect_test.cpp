@@ -1,3 +1,6 @@
+// CheckConnect tests: each device check passes or fails as expected,
+// and a Dolibarr error fails the whole check.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -34,6 +37,7 @@ protected:
     NiceMock<MockNetwork> network;
 
     Conveyor conveyor{10, 500};
+    SorterController sorterController;
     DolibarrAPI api{"http://localhost/api/index.php", "test-key"};
     CheckConnect checkConnect;
 };

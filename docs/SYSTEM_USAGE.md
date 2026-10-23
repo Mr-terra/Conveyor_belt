@@ -49,7 +49,7 @@ WAITING ──(A)──▶ CHECK_CONNECT ──ok──▶ INIT_POSITIONS ──
 2. Power the M5Stack. The screen shows the mode (`WAITING`) and the conveyor state.
 3. Watch the serial monitor (115200 baud). The start-up log should show:
    - `✅ WiFi OK, IP=...`, once the board has joined the Wi-Fi network.
-   - `✅ Dolibarr OK`, once the Dolibarr API has answered. If it shows `❌ Dolibarr FAIL`, the
+   - `[INFO] Main: Dolibarr OK`, once the Dolibarr API has answered. If it shows `[ERROR] Main: Dolibarr check failed`, the
      board keeps running, but Start stops at the connection check until the API answers. Fix the URL or the key, then reflash.
 
 The Wi-Fi network, the Dolibarr URL and the API key come from the `.env` file at build time.
@@ -96,7 +96,7 @@ The error bin is shared with warehouse 1. A parcel goes to the error bin when:
 - the stock movement is refused by Dolibarr.
 
 Because of the shared bin, check the serial log to tell an error parcel from a warehouse 1
-parcel (`Unknown UID` or `[ERR]` lines).
+parcel (`unknown card` or `[ERROR] Addresser` lines).
 
 The warehouse-to-bin table is in `src/sorter/addresser/addresser.cpp`. The angles are in
 `src/sorter/servo_sorter/servo_sorter.cpp`.
@@ -129,19 +129,20 @@ If the M5Stack stops responding completely, cut the power and start again.
 Every state change, hardware change and error is logged. The messages below are the ones you
 are most likely to see.
 
+Each line starts with its level (`[INFO]`, `[WARNING]` or `[ERROR]`), then the module name.
+
 | Message | Meaning |
 |---------|---------|
-| `❌ WiFi connect timeout` | The board did not join the Wi-Fi network within 15 seconds. Check the network and the `.env` values. |
-| `❌ Dolibarr FAIL` | The Dolibarr API did not answer with a success status. Check the URL, the key and the server. |
-| `❌ GRBL Motor not detected at 0x70` | The GRBL module does not answer on I2C. Check its power and wiring. |
-| `❌ GRBL Motor detected but not responding to commands` | The module is on the bus but gives no status. |
-| `❌ GRBL Motor is in LOCK/ALARM state` | The module is locked. It must be unlocked before use. |
-| `❌ RFID not detected at 0x28` | The RFID reader does not answer. |
-| `❌ Servo/GoPlus2 not detected at 0x38` | The servo board does not answer. Check its power. |
-| `Unknown UID` | The tag is not known in Dolibarr. The parcel goes to the error bin. |
-| `[ERR] Empty HTTP response` | The Dolibarr lookup failed. The parcel goes to the error bin. |
-| `[ERR] Stock movement was not recorded in Dolibarr` | The parcel was sent to the error bin and the stock is not updated. Check the movement in Dolibarr. |
-| `GRBL module not responding` (critical) | The conveyor has been silent for 1 second. See [Errors and recovery](#errors-and-recovery). |
+| `[ERROR] Main: WiFi connect timeout` | The board did not join the Wi-Fi network within 15 seconds. Check the network and the `.env` values. |
+| `[ERROR] Main: Dolibarr check failed` | The Dolibarr API did not answer with a success status. Check the URL, the key and the server. |
+| `[ERROR] Conveyor: GRBL module not detected at 0x70` | The GRBL module does not answer on I2C. Check its power and wiring. |
+| `[ERROR] Conveyor: GRBL module is locked, unlock it before use` | The module is locked. It must be unlocked before use. |
+| `[ERROR] RFID: reader not detected at 0x28` | The RFID reader does not answer. |
+| `[ERROR] Servo: GoPlus2 not detected at 0x38` | The servo board does not answer. Check its power. |
+| `[WARNING] Sorter: unknown card <UID>` | The tag is not known in Dolibarr. The parcel goes to the error bin. |
+| `[ERROR] Addresser: empty Dolibarr response` | The Dolibarr lookup failed. The parcel goes to the error bin. |
+| `[ERROR] Addresser: stock movement rejected, parcel sent to the error bin` | The parcel was sent to the error bin and the stock is not updated. Check the movement in Dolibarr. |
+| `[timestamp] CRITICAL [Conveyor]: GRBL module not responding` | The conveyor has been silent for 1 second. See [Errors and recovery](#errors-and-recovery). |
 
 ---
 

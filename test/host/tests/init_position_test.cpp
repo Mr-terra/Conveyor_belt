@@ -1,3 +1,5 @@
+// InitPosition tests: the placeholder steps succeed together.
+
 #include <gtest/gtest.h>
 
 #include "init_position.h"

@@ -1,3 +1,5 @@
+// ServoSorter: the diverter servo, driven through the GoPlus2 board.
+
 #pragma once
 #include <Arduino.h>
 #include "hal/i2c_bus.h"
@@ -13,6 +15,8 @@ enum class ServoState : uint8_t
     Moving
 };
 
+// Drives the diverter. moveTo() turns the servo to the angle of a bin.
+// A parcel without a bin goes to the error bin.
 class ServoSorter
 {
 public:
@@ -29,6 +33,7 @@ private:
     IServoDriver *_driver = nullptr;
     II2CBus *_bus = nullptr;
 
+    // Servo angle in degrees for each bin: BIN1 = 0, BIN2 = 30, BIN3 = 60.
     int angleFor(Bin::Id bin) const;
 
     // Observable internal state

@@ -1,6 +1,9 @@
+// Types shared by the sorting modules.
+
 #pragma once
 #include <Arduino.h>
 
+// The sorter bins. NONE means no bin: the card could not be routed.
 class Bin
 {
 public:

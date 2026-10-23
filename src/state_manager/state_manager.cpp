@@ -1,23 +1,16 @@
+// StateManager: detects state changes, applies the rules, and warns about stuck states (see state_manager.h).
+
 #include "state_manager.h"
+#include "log.h"
 #include "error.h"
 
-StateManager stateManager;
-
-// Physical state verification structure
-struct PhysicalCheck
-{
-    String module;
-    String state;
-    bool (*checkFunction)();
-    String errorMessage;
-    ErrorLevel level;
-};
 
 void StateManager::addStateRule(String module, String fromState, String toState, ErrorLevel level, String message)
 {
     stateRules.push_back({module, fromState, toState, level, message});
 }
 
+// Runs every rule that matches this transition. '*' in a rule matches any state.
 void StateManager::checkStateRules(String module, String fromState, String toState)
 {
     for (const StateRule &rule : stateRules)
@@ -34,6 +27,7 @@ void StateManager::checkStateRules(String module, String fromState, String toSta
     }
 }
 
+// Only the conveyor is handled here. An ALARM stops production; a FATAL alarm also goes to ERROR.
 void StateManager::handleCriticalStateChange(String module, String newState, ErrorLevel level)
 {
     if (_scheduler == nullptr) {
@@ -43,17 +37,17 @@ void StateManager::handleCriticalStateChange(String module, String newState, Err
     // Handle critical states per module
     if (module == "Conveyor") {
         if (newState == "ALARM") {
-            Serial.println("🚨 Critical conveyor ALARM detected");
+            LOG_ERROR("StateManager", "conveyor ALARM detected");
             
             // If we are in production, switch to WAITING
             if (_scheduler->getState() == SchedulerState::Production) {
-                Serial.println("   Stopping production due to conveyor alarm");
+                LOG_WARN("StateManager", "stopping production on conveyor alarm");
                 _scheduler->setState(SchedulerState::Waiting);
             }
             
             // For fatal errors, switch to ERROR
             if (level == ERROR_FATAL) {
-                Serial.println("   Fatal error - switching to ERROR state");
+                LOG_ERROR("StateManager", "fatal error, switching to ERROR");
                 _scheduler->setState(SchedulerState::Error);
             }
         }
@@ -72,6 +66,7 @@ static bool isSteadyState(const String &state)
            state == "IDLE" || state == "RUNNING" || state == "PRODUCTION";
 }
 
+// Called on every loop pass. Each observed state is compared with the value seen last time.
 void StateManager::monitorAllStates()
 {
     unsigned long currentTime = millis();
@@ -84,12 +79,7 @@ void StateManager::monitorAllStates()
         if (currentState != monitor.previousState)
         {
             // 3. CHANGE DETECTED!
-            Serial.print("🔄 State change detected: ");
-            Serial.print(monitor.moduleName);
-            Serial.print(" from ");
-            Serial.print(monitor.previousState);
-            Serial.print(" to ");
-            Serial.println(currentState);
+            LOG_INFO("StateManager", "%s: %s -> %s", monitor.moduleName.c_str(), monitor.previousState.c_str(), currentState.c_str());
 
             // 4. Check the rules
             checkStateRules(monitor.moduleName, monitor.previousState, currentState);

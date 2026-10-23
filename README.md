@@ -96,9 +96,9 @@ does not build it.
 
 ## Releases
 
-Version tags (`v*`) create a GitHub Release with generated notes. The firmware binary is **not**
-attached: it contains the Wi-Fi password and the Dolibarr API key from the build environment.
-To get the firmware, write `.env` and build it from source:
+Version tags (`v*`) create a GitHub Release with generated notes and the compiled firmware attached as
+`firmware-<tag>.bin`, ready to flash. The image contains the Wi-Fi and Dolibarr settings from the
+repository secrets. To build it yourself with your own `.env`:
 
 ```bash
 pio run -e m5stack-grey

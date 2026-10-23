@@ -1,3 +1,6 @@
+// Fake Arduino core for the PC build.
+// It provides the parts of String, Serial, millis/delay and constrain that the firmware logic uses.
+
 // Host (PC) replacement for the Arduino core, used to build and unit test
 // the firmware logic without an ESP32 toolchain.
 #pragma once

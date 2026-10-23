@@ -1,3 +1,6 @@
+// DolibarrAPI tests: request URLs, the API key header, the JSON bodies,
+// and how HTTP status codes are turned into results.
+
 #include <ArduinoJson.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

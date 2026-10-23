@@ -1,9 +1,13 @@
+// ServoSorter: drives the diverter servo through the GoPlus2 board (see servo_sorter.h).
+
 #include "servo_sorter.h"
+#include "log.h"
 
 // Servo channel on the GoPlus2 board and I2C address of the board
 static const uint8_t SERVO_CHANNEL = 0;
 static const uint8_t GOPLUS_ADDR = 0x38;
 
+// Angle the arm parks at after start-up. It is the same angle as BIN2 (see docs/OVERVIEW.md).
 static int init_angle = 30;
 
 void ServoSorter::setHardware(IServoDriver *driver, II2CBus *bus)
@@ -55,14 +59,13 @@ int ServoSorter::angleFor(Bin::Id bin) const
     }
 }
 
+// Turns the arm to the angle of the bin. Bin::NONE goes to the error bin instead.
 void ServoSorter::moveTo(Bin::Id bin)
 {
-    Serial.println((int)bin);
-
-    if (bin == Bin::NONE)
+        if (bin == Bin::NONE)
     {
         // Unknown parcel: send it to the error bin rather than leaving it on the belt
-        Serial.println("No bin for this parcel - sending it to the error bin");
+        LOG_WARN("Servo", "no bin for this parcel, sending it to the error bin");
         bin = Bin::ERROR_BIN;
     }
 
@@ -70,7 +73,7 @@ void ServoSorter::moveTo(Bin::Id bin)
 
     uint8_t angle = (uint8_t)angleFor(bin);
 
-    Serial.println(angle);
+    LOG_INFO("Servo", "moving to %u degrees", angle);
 
     _driver->writeAngle(SERVO_CHANNEL, angle);
 
@@ -83,12 +86,12 @@ bool ServoSorter::checkConnection()
 
     if (error == 0)
     {
-        Serial.println("✅ Servo/GoPlus2 I2C detected at 0x38");
+        LOG_INFO("Servo", "GoPlus2 detected at 0x38");
         return true;
     }
     else
     {
-        Serial.printf("❌ Servo/GoPlus2 not detected at 0x38 (error: %d)\n", error);
+        LOG_ERROR("Servo", "GoPlus2 not detected at 0x38 (I2C error %d)", error);
         return false;
     }
 }

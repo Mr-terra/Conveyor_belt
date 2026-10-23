@@ -59,7 +59,7 @@ Run before production, after Button A.
 | Dolibarr | HTTP check of the API, must answer 200 | Active |
 
 If any check fails, Start goes back to `WAITING`. The same Dolibarr check also runs once at boot from
-`loop()` and logs `✅ Dolibarr OK` or `❌ Dolibarr FAIL`. A parcel whose lookup fails goes to the error
+`loop()` and logs `[INFO] Main: Dolibarr OK` or `[ERROR] Main: Dolibarr check failed`. A parcel whose lookup fails goes to the error
 bin (section 7).
 
 ## 5. Init Position

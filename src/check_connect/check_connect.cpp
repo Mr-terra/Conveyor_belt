@@ -1,10 +1,12 @@
+// CheckConnect: runs the connection checks before production (see check_connect.h).
+
 #include "check_connect.h"
+#include "log.h"
 #include "conveyor.h"
 #include "main_sorter.h"
 #include "dolibarr_api.h"
 #include <Arduino.h>
 
-CheckConnect checkConnect;
 
 void CheckConnect::setDolibarrAPI(DolibarrAPI *api)
 {
@@ -30,25 +32,26 @@ bool CheckConnect::areDependenciesConfigured()
 
     if (!allConfigured)
     {
-        Serial.println("⚠️  CheckConnect: Some dependencies not configured!");
+        LOG_WARN("CheckConnect", "dependencies not configured:");
         if (_conveyor == nullptr)
-            Serial.println("  - Conveyor not set");
+            LOG_WARN("CheckConnect", "conveyor not set");
         if (_sorterController == nullptr)
-            Serial.println("  - SorterController not set");
+            LOG_WARN("CheckConnect", "sorter controller not set");
         if (_dolibarrApi == nullptr)
-            Serial.println("  - DolibarrAPI not set");
+            LOG_WARN("CheckConnect", "Dolibarr API not set");
     }
 
     return allConfigured;
 }
 
+// Runs the three checks. Every check runs even when an earlier one failed, so the log shows all failures.
 bool CheckConnect::checkConnections()
 {
 
     // Check that all dependencies are configured
     if (!areDependenciesConfigured())
     {
-        Serial.println("❌ === Connection check ABORTED - dependencies not configured ===\n");
+        LOG_ERROR("CheckConnect", "check aborted: dependencies not configured");
         return false;
     }
 
@@ -60,22 +63,23 @@ bool CheckConnect::checkConnections()
     bool allOk = dolibarrOk && motorOk && sorterOk;
     if (allOk)
     {
-        Serial.println("✅ === All connections OK ===\n");
+        LOG_INFO("CheckConnect", "all connections OK");
     }
     else
     {
-        Serial.println("❌ === Connection check FAILED ===\n");
+        LOG_ERROR("CheckConnect", "connection check failed");
     }
 
     return allOk;
 }
 
+// Dolibarr is optional at this level: without an API object the check is skipped and passes.
 bool CheckConnect::checkDolibarrConnection()
 {
 
     if (_dolibarrApi == nullptr)
     {
-        Serial.println("⚠️  Dolibarr API not configured (skipping check)");
+        LOG_WARN("CheckConnect", "Dolibarr API not configured, check skipped");
         return true; // Assume OK if not configured
     }
 
@@ -83,34 +87,36 @@ bool CheckConnect::checkDolibarrConnection()
 
     if (connected)
     {
-        Serial.println("✅ Dolibarr connection OK");
+        LOG_INFO("CheckConnect", "Dolibarr connection OK");
         return true;
     }
     else
     {
-        Serial.println("❌ Dolibarr connection FAILED");
+        LOG_ERROR("CheckConnect", "Dolibarr connection failed");
         return false;
     }
 }
 
+// The conveyor performs its own I2C and lock checks (see Conveyor::checkConnection()).
 bool CheckConnect::checkMotorConnection()
 {
 
     if (_conveyor == nullptr)
     {
-        Serial.println("❌ Conveyor not initialized");
+        LOG_ERROR("CheckConnect", "conveyor not initialized");
         return false;
     }
 
     return _conveyor->checkConnection();
 }
 
+// The sorter performs its own checks for the RFID reader and the servo board.
 bool CheckConnect::checkSorterConnection()
 {
 
     if (_sorterController == nullptr)
     {
-        Serial.println("❌ SorterController not initialized");
+        LOG_ERROR("CheckConnect", "sorter controller not initialized");
         return false;
     }
 

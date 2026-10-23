@@ -1,14 +1,15 @@
+// Scheduler: the state transitions and the work done in each state (see scheduler.h).
+
 #include "scheduler.h"
+#include "log.h"
 #include "main_sorter.h"
 #include "check_connect.h"
 #include "init_position.h"
 #include "conveyor.h"
 #include <Arduino.h>
 
-Scheduler scheduler;
 
-// State constants for scheduler (now declared in header)
-// State conversion function for automatic monitoring
+// Name of each state, used on the screen, in the logs and by the state rules.
 String Scheduler::stateToString(SchedulerState state)
 {
     switch (state)
@@ -27,11 +28,13 @@ String Scheduler::stateToString(SchedulerState state)
     return "UNKNOWN";
 }
 
+// Starts in WAITING: nothing is driven until Start is pressed.
 void Scheduler::initialize() {
     _current_state = SchedulerState::Waiting;
-    Serial.println("Scheduler initialized. State: WAITING");
+    LOG_INFO("Scheduler", "initialized, state WAITING");
 }
 
+// Stores the modules the scheduler drives. Called once from setup().
 void Scheduler::setDependencies(
     CheckConnect* checkConnect,
     InitPosition* initPosition,
@@ -46,8 +49,7 @@ void Scheduler::setDependencies(
 
 void Scheduler::setState(SchedulerState state) {
     _current_state = state;
-    Serial.print("Scheduler state changed to: ");
-    Serial.println(stateToString(state));
+    LOG_INFO("Scheduler", "state -> %s", stateToString(state).c_str());
 }
 
 SchedulerState Scheduler::getState() {
@@ -57,7 +59,7 @@ SchedulerState Scheduler::getState() {
 void Scheduler::triggerCheckConnect()
 {
     if (_checkConnect == nullptr) {
-        Serial.println("❌ Cannot trigger CHECK_CONNECT: CheckConnect not configured");
+        LOG_ERROR("Scheduler", "cannot start CHECK_CONNECT: CheckConnect not configured");
         setState(SchedulerState::Error);
         return;
     }
@@ -67,7 +69,7 @@ void Scheduler::triggerCheckConnect()
 void Scheduler::triggerInitPositions()
 {
     if (_initPosition == nullptr) {
-        Serial.println("❌ Cannot trigger INIT_POSITIONS: InitPosition not configured");
+        LOG_ERROR("Scheduler", "cannot start INIT_POSITIONS: InitPosition not configured");
         setState(SchedulerState::Error);
         return;
     }
@@ -77,13 +79,14 @@ void Scheduler::triggerInitPositions()
 void Scheduler::triggerProduction()
 {
     if (_sorterController == nullptr || _conveyor == nullptr) {
-        Serial.println("❌ Cannot trigger PRODUCTION: Dependencies not configured");
+        LOG_ERROR("Scheduler", "cannot start PRODUCTION: dependencies not configured");
         setState(SchedulerState::Error);
         return;
     }
     setState(SchedulerState::Production);
 }
 
+// Back to WAITING with the conveyor stopped. Used by button B and by every failed step.
 void Scheduler::triggerStop()
 {
     setState(SchedulerState::Waiting);
@@ -98,24 +101,25 @@ void Scheduler::executeCurrentState() {
     if (_current_state == SchedulerState::Error) {
         // Check whether we can leave the ERROR state
         if (canRecoverFromError()) {
-            Serial.println("🔧 Error conditions resolved - returning to WAITING");
+            LOG_INFO("Scheduler", "error conditions resolved, back to WAITING");
             Error::clearCriticalErrors();
             setState(SchedulerState::Waiting);
         }
         return; // Do not run other states in ERROR mode
     }
+    // Each step below runs once per pass. It moves on when it succeeds, and goes back to WAITING when it fails.
     if (_current_state == SchedulerState::CheckConnect) {
         if (_checkConnect != nullptr) {
             bool connectionsOk = _checkConnect->checkConnections();
             if (connectionsOk) {
-                Serial.println("✅ Connections OK - transitioning to INIT_POSITIONS");
+                LOG_INFO("Scheduler", "connections OK, starting INIT_POSITIONS");
                 triggerInitPositions();
             } else {
-                Serial.println("❌ Connection check failed - returning to WAITING");
+                LOG_ERROR("Scheduler", "connection check failed, back to WAITING");
                 triggerStop();
             }
         } else {
-            Serial.println("❌ CheckConnect not configured - returning to WAITING");
+            LOG_ERROR("Scheduler", "CheckConnect not configured, back to WAITING");
             triggerStop();
         }
     }
@@ -123,21 +127,23 @@ void Scheduler::executeCurrentState() {
         if (_initPosition != nullptr) {
             bool initOk = _initPosition->initializePositions();
             if (initOk) {
-                Serial.println("✅ Position initialization OK - transitioning to PRODUCTION");
+                LOG_INFO("Scheduler", "position initialization OK, starting PRODUCTION");
                 triggerProduction();
             } else {
-                Serial.println("❌ Position initialization failed - returning to WAITING");
+                LOG_ERROR("Scheduler", "position initialization failed, back to WAITING");
                 triggerStop();
             }
         } else {
-            Serial.println("❌ InitPosition not configured - returning to WAITING");
+            LOG_ERROR("Scheduler", "InitPosition not configured, back to WAITING");
             triggerStop();
         }
     }
     else if (_current_state == SchedulerState::Production) {
         // Check the conveyor state before continuing
+        // Safety check: production stops if the conveyor is in alarm.
+        // The state rules normally stop production first, so this is a second guard.
         if (_conveyor != nullptr && _conveyor->getState() == ConveyorState::Alarm) {
-            Serial.println("❌ Conveyor in ALARM state during production - stopping");
+            LOG_WARN("Scheduler", "conveyor in ALARM during production, stopping");
             setState(SchedulerState::Waiting);
             return;
         }

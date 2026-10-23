@@ -1,3 +1,6 @@
+// Scheduler tests: the real scheduler and modules run with hardware doubles.
+// They cover the normal sequence, the failure paths, and recovery from ERROR.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -57,6 +60,7 @@ protected:
     NiceMock<MockNetwork> network;
 
     Conveyor conveyor{10, 500};
+    SorterController sorterController;
     DolibarrAPI api{"http://localhost/api/index.php", "test-key"};
     CheckConnect checkConnect;
     InitPosition initPosition;

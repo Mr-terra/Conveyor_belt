@@ -1,3 +1,5 @@
+// StateManager: watches the state of the modules, applies the rules, and reports stuck states.
+
 #ifndef STATE_MANAGER_H
 #define STATE_MANAGER_H
 
@@ -7,15 +9,23 @@
 #include "error.h"
 #include "scheduler.h"
 
+// Observes state variables of the modules and applies rules when they change.
+// A module registers its state variable, a function that names each state, and its rules.
+// monitorAllStates() is called on every loop pass.
 class StateManager {
 public:
     // Pure state observation - no business logic dependencies
     template<typename T>
+    // Starts observing a state variable under the module name moduleName.
     void observeState(T* stateVariable, String moduleName, String (*stateToString)(T));
     
+    // Adds a rule: when module goes from fromState to toState, report message at level.
+    // '*' matches any state.
     void addStateRule(String module, String fromState, String toState, ErrorLevel level, String message);
     
     // Automatic state monitoring - pure observation
+    // Compares every observed state with the last value seen.
+    // Applies the rules on a change, and warns when a transitional state lasts too long.
     void monitorAllStates();
     
     // Module self-configuration interface
@@ -24,12 +34,14 @@ public:
                                       void (*setupRules)(StateManager&));
     
     // Set scheduler reference for state coordination
+    // Lets the rules act on the scheduler (stop production, or go to ERROR).
     void setScheduler(Scheduler* scheduler);
 
 private:
     bool hasCriticalErrorFlag = false;
     Scheduler* _scheduler = nullptr; // Reference to scheduler for state coordination
     
+    // One rule, see addStateRule().
     struct StateRule {
         String module;
         String fromState;
@@ -40,6 +52,7 @@ private:
     std::vector<StateRule> stateRules;
     
     // State monitoring structures - pure data
+    // One observed state variable, and the last value seen.
     struct StateMonitor {
         std::function<String()> readState; // Returns the formatted current state
         String moduleName;
@@ -49,6 +62,7 @@ private:
     };
     std::vector<StateMonitor> stateMonitors;
     
+    // How long a transitional state may last before a warning is raised, in milliseconds.
     unsigned long stuckStateTimeout = 5000; // 5 seconds
     
     void checkStateRules(String module, String fromState, String toState);
@@ -57,6 +71,8 @@ private:
     template<typename T>
     void addStateMonitor(T* stateVariable, String moduleName, String (*stateToString)(T));
 
+    // Reacts to a change that matched a rule: stops production or goes to ERROR, depending on
+    // the module, the new state and the level.
     void handleCriticalStateChange(String module, String newState, ErrorLevel level);
 };
 

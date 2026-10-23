@@ -1,4 +1,7 @@
+// SorterController: runs one sorting cycle (see main_sorter.h).
+
 #include "main_sorter.h"
+#include "log.h"
 
 #include <Arduino.h>
 
@@ -7,17 +10,13 @@
 #include "servo_sorter.h"
 #include "state_manager.h"
 #include "error.h"
-#include "globals.h"
+#include "dolibarr_api.h"
 
-static RFIDReader rfid;
-static ServoSorter servo;
-
-SorterController sorterController;
 
 void SorterController::setHardware(IRfidDriver *rfidDriver, IServoDriver *servoDriver, II2CBus *bus)
 {
-  rfid.setHardware(rfidDriver, bus);
-  servo.setHardware(servoDriver, bus);
+  _rfid.setHardware(rfidDriver, bus);
+  _servo.setHardware(servoDriver, bus);
 }
 
 String SorterController::stateToString(SorterState s)
@@ -36,6 +35,11 @@ String SorterController::stateToString(SorterState s)
   return "UNKNOWN";
 }
 
+void SorterController::setDolibarrAPI(DolibarrAPI *api)
+{
+  _addresser.setDolibarrAPI(api);
+}
+
 void SorterController::setState(SorterState newState)
 {
   sorterState = newState;
@@ -50,8 +54,8 @@ void SorterController::setupStateRules(StateManager &stateManager)
 
 void SorterController::initialize(StateManager &stateManager)
 {
-  rfid.init();
-  servo.init(stateManager);
+  _rfid.init();
+  _servo.init(stateManager);
 
   stateManager.observeState<SorterState>(
       &this->sorterState,
@@ -61,27 +65,28 @@ void SorterController::initialize(StateManager &stateManager)
   setupStateRules(stateManager);
   setState(SorterState::Waiting);
 
-  Serial.println("SorterController ready");
+  LOG_INFO("Sorter", "ready");
 }
 
 bool SorterController::checkConnection()
 {
-  bool rfidOk = rfid.checkConnection();
-  bool servoOk = servo.checkConnection();
+  bool rfidOk = _rfid.checkConnection();
+  bool servoOk = _servo.checkConnection();
 
   if (rfidOk && servoOk)
   {
-    Serial.println("✅ Sorter system OK (RFID + Servo)");
+    LOG_INFO("Sorter", "RFID and servo OK");
     return true;
   }
 
-  Serial.println("❌ Sorter system failure");
+  LOG_ERROR("Sorter", "RFID or servo check failed");
   return false;
 }
 
+// One cycle. No card: WAITING. A card: RFID_READ, find its bin, move the servo, then WAITING.
 void SorterController::production()
 {
-  String uidRead = rfid.readUid();
+  String uidRead = _rfid.readUid();
 
   if (uidRead.isEmpty())
   {
@@ -92,14 +97,16 @@ void SorterController::production()
   setState(SorterState::RfidRead);
 
 
-  Bin::Id bin = addresser.resolve(uidRead);
+  // The addresser returns the bin, or Bin::NONE when the card cannot be routed.
+  Bin::Id bin = _addresser.resolve(uidRead);
   if (bin == Bin::NONE)
   {
     setState(SorterState::RfidReadingError);
-    Serial.println("Unknown UID");
+    LOG_WARN("Sorter", "unknown card %s", uidRead.c_str());
     setState(SorterState::Waiting);
   }
 
-  servo.moveTo(bin);
+  // moveTo() sends Bin::NONE to the error bin, so every parcel ends up in a bin.
+  _servo.moveTo(bin);
   setState(SorterState::Waiting);
 }

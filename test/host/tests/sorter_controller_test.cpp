@@ -1,9 +1,10 @@
+// SorterController tests: the device checks and one full sorting cycle.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "addresser.h"
 #include "dolibarr_api.h"
-#include "globals.h"
 #include "hardware_mocks.h"
 #include "main_sorter.h"
 #include "state_manager.h"
@@ -22,16 +23,17 @@ protected:
         ON_CALL(network, isConnected()).WillByDefault(Return(true));
         ON_CALL(rfid, isNewCardPresent()).WillByDefault(Return(false));
 
-        sorterController.setHardware(&rfid, &servo, &bus);
+        sorter.setHardware(&rfid, &servo, &bus);
         api.setTransport(&http, &network);
-        addresser.setDolibarrAPI(&api);
+        sorter.setDolibarrAPI(&api);
     }
 
     void TearDown() override
     {
-        addresser.setDolibarrAPI(nullptr);
+        sorter.setDolibarrAPI(nullptr);
     }
 
+    SorterController sorter;
     NiceMock<MockRfidDriver> rfid;
     NiceMock<MockServoDriver> servo;
     NiceMock<MockI2CBus> bus;
@@ -42,21 +44,21 @@ protected:
 
 TEST_F(SorterControllerTest, ChecksPassWhenRfidAndServoAcknowledge)
 {
-    EXPECT_TRUE(sorterController.checkConnection());
+    EXPECT_TRUE(sorter.checkConnection());
 }
 
 TEST_F(SorterControllerTest, ChecksFailWhenRfidDoesNotAcknowledge)
 {
     ON_CALL(bus, probe(0x28)).WillByDefault(Return(2));
 
-    EXPECT_FALSE(sorterController.checkConnection());
+    EXPECT_FALSE(sorter.checkConnection());
 }
 
 TEST_F(SorterControllerTest, ChecksFailWhenServoDoesNotAcknowledge)
 {
     ON_CALL(bus, probe(0x38)).WillByDefault(Return(2));
 
-    EXPECT_FALSE(sorterController.checkConnection());
+    EXPECT_FALSE(sorter.checkConnection());
 }
 
 TEST_F(SorterControllerTest, InitializeStartsBothDrivers)
@@ -66,14 +68,14 @@ TEST_F(SorterControllerTest, InitializeStartsBothDrivers)
     EXPECT_CALL(rfid, init()).Times(1);
     EXPECT_CALL(servo, begin()).Times(1);
 
-    sorterController.initialize(stateManager);
+    sorter.initialize(stateManager);
 }
 
 TEST_F(SorterControllerTest, ProductionWithoutCardDoesNotMoveServo)
 {
     EXPECT_CALL(servo, writeAngle(_, _)).Times(0);
 
-    sorterController.production();
+    sorter.production();
 }
 
 TEST_F(SorterControllerTest, ProductionSortsCardToItsWarehouseBin)
@@ -95,7 +97,7 @@ TEST_F(SorterControllerTest, ProductionSortsCardToItsWarehouseBin)
 
     EXPECT_CALL(servo, writeAngle(0, 60)).Times(1);
 
-    sorterController.production();
+    sorter.production();
 }
 
 TEST_F(SorterControllerTest, ProductionWithUnknownCardSendsItToErrorBin)
@@ -111,5 +113,5 @@ TEST_F(SorterControllerTest, ProductionWithUnknownCardSendsItToErrorBin)
 
     EXPECT_CALL(servo, writeAngle(0, 0)).Times(1); // error bin = BIN1
 
-    sorterController.production();
+    sorter.production();
 }

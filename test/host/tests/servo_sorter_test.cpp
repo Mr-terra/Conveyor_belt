@@ -1,3 +1,6 @@
+// ServoSorter tests: the angle of each bin, the error bin for unknown bins,
+// and the GoPlus2 address.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

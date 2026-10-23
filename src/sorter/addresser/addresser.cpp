@@ -1,4 +1,7 @@
+// Addresser: turns a card UID into a Dolibarr product and a sorter bin (see addresser.h).
+
 #include "addresser.h"
+#include "log.h"
 #include "dolibarr_api.h"
 #include <ArduinoJson.h>
 
@@ -24,7 +27,7 @@ Bin::Id Addresser::resolve(const String &uid) const
 {
     if (_api == nullptr)
     {
-        Serial.println("[ERR] DolibarrAPI not set (Addresser::_api is null)");
+        LOG_ERROR("Addresser", "Dolibarr API not set");
         return Bin::NONE;
     }
 
@@ -33,14 +36,16 @@ Bin::Id Addresser::resolve(const String &uid) const
 
     if (jsonResponse.length() == 0)
     {
-        Serial.println("[ERR] Empty HTTP response");
+        LOG_ERROR("Addresser", "empty Dolibarr response");
         return Bin::NONE;
     }
 
+    // The JSON is parsed once per field. This is simple to read, and fine for one card at a time.
     int warehouseId = extractWarehouseId(jsonResponse);
     int productId = extractProductId(jsonResponse);
 
 
+    // Finds the bin of the warehouse. A warehouse that is not in the table gives Bin::NONE.
     for (const WarehouseBin &route : WAREHOUSE_BINS)
     {
         if (warehouseId != route.warehouseId)
@@ -50,7 +55,7 @@ Bin::Id Addresser::resolve(const String &uid) const
         // count is then wrong, and the error log is the only trace of it.
         if (!_api->createStockMovement(productId, warehouseId, 1))
         {
-            Serial.println("[ERR] Stock movement was not recorded in Dolibarr - sending to the error bin");
+            LOG_ERROR("Addresser", "stock movement rejected, parcel sent to the error bin");
             return Bin::ERROR_BIN;
         }
         return route.bin;
@@ -75,15 +80,14 @@ int Addresser::extractWarehouseId(const String &json) const
 
     if (error)
     {
-        Serial.print("JSON parse failed: ");
-        Serial.println(error.c_str());
+        LOG_ERROR("Addresser", "JSON parse failed: %s", error.c_str());
         return -1;
     }
 
-    // Your JSON is an array → we take index 0
+    // Dolibarr returns an array of matching products. The first one is used.
     if (!doc.is<JsonArray>() || doc.size() == 0)
     {
-        Serial.println("[ERR] JSON is not array or empty");
+        LOG_ERROR("Addresser", "product response is not a non-empty array");
         return -1;
     }
 
@@ -109,14 +113,13 @@ int Addresser::extractProductId(const String &json) const
     DeserializationError error = deserializeJson(doc, json.c_str());
     if (error)
     {
-        Serial.print("JSON parse failed: ");
-        Serial.println(error.c_str());
+        LOG_ERROR("Addresser", "JSON parse failed: %s", error.c_str());
         return -1;
     }
 
     if (!doc.is<JsonArray>() || doc.size() == 0)
     {
-        Serial.println("[ERR] JSON is not array or empty");
+        LOG_ERROR("Addresser", "product response is not a non-empty array");
         return -1;
     }
 

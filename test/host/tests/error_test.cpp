@@ -1,3 +1,5 @@
+// Error tests: callbacks, the critical-error latch, and the message format.
+
 #include <gtest/gtest.h>
 
 #include "error.h"

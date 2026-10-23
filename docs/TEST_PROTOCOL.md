@@ -66,12 +66,12 @@ Prerequisites: the `.env` file is filled in, the firmware is flashed, the GRBL m
 
 | # | Step | Expected result | Result |
 |---|------|-----------------|:------:|
-| H1 | Power on | Serial log shows `WiFi OK` and `Dolibarr OK`; screen shows `WAITING` | |
-| H2 | Power on with Dolibarr stopped | `Dolibarr FAIL` is logged; the board still runs, and Start stops at the connection check and stays in `WAITING` | |
+| H1 | Power on | Serial log shows `[INFO] Main: WiFi connected` and `[INFO] Main: Dolibarr OK`; screen shows `WAITING` | |
+| H2 | Power on with Dolibarr stopped | `[ERROR] Main: Dolibarr check failed` is logged; the board still runs, and Start stops at the connection check and stays in `WAITING` | |
 | H3 | Press **A** | `CHECK_CONNECT` then `INIT_POSITIONS` then `PRODUCTION`; the conveyor moves forward | |
-| H4 | Present a known card | Log shows the UID and the warehouse ID, no `[ERR]` line, and the servo moves to the bin for that warehouse | |
+| H4 | Present a known card | Log shows the card and no `[ERROR]` line, and the servo moves to the bin for that warehouse | |
 | H5 | Verify the stock movement in Dolibarr | A movement exists for the product, warehouse and quantity 1 | |
-| H6 | Present an unknown card | `Unknown UID`; the servo moves to 0° (BIN1, the error bin) | |
+| H6 | Present an unknown card | `[WARNING] Sorter: unknown card`; the servo moves to 0° (BIN1, the error bin) | |
 | H7 | Block the Dolibarr server during a card read | The request fails after about 5 s; the board does not freeze; the parcel still goes to the error bin | |
 | H8 | Unplug the GRBL module during production | After about 1 s the conveyor is in `ALARM`, production stops, and a critical error is logged once | |
 | H9 | Plug the GRBL module back in, press **B**, then **A** | **B** stops the conveyor; **A** clears the latched error and runs the checks again | |

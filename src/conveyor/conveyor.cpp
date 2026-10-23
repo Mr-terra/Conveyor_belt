@@ -1,12 +1,17 @@
+// Conveyor: GRBL motor commands, the state read from the hardware every 100 ms,
+// and the watchdog for a silent module. The module is at I2C address 0x70.
+
 #include "conveyor.h"
+#include "log.h"
 #include "state_manager.h"
 #include "error.h"
 
+// I2C address of the GRBL 13.2 module.
 #define CONVEYOR_ADDR 0x70
 
-Conveyor conveyor(10, 250);
 
 
+// Speed is limited to 1000 here, the largest value the module accepts.
 Conveyor::Conveyor(int movement, int speed)
     : _movement(movement), _speed(speed), _isRunning(false)
 {
@@ -53,6 +58,8 @@ void Conveyor::configureStateMonitoring(StateManager &stateManager)
     setupStateRules(stateManager);
 }
 
+// Called once from setup(), after the hardware has been bound.
+// Unlocks the module, stops the motor, reads the first state, then registers it with the StateManager.
 void Conveyor::initialize(StateManager &stateManager)
 {
     // Initialize the GRBL module
@@ -65,7 +72,7 @@ void Conveyor::initialize(StateManager &stateManager)
     // Unlock if needed
     if (_grbl->inLock())
     {
-        Serial.println("⚠️ Module locked, unlocking...");
+        LOG_WARN("Conveyor", "module locked, unlocking");
         _grbl->unLock();
         delay(100);
     }
@@ -77,12 +84,13 @@ void Conveyor::initialize(StateManager &stateManager)
     // Read the initial state from the hardware
     readHardwareState();
 
-    Serial.println("✅ Conveyor initialized with Module GRBL 13.2");
-    Serial.println(stateToString(_currentState));
+    LOG_INFO("Conveyor", "initialized, GRBL module 13.2");
+    LOG_INFO("Conveyor", "initial state %s", stateToString(_currentState).c_str());
 
     configureStateMonitoring(stateManager);
 }
 
+// Three checks in order: the I2C address answers, the status can be read, and the module is not locked.
 bool Conveyor::checkConnection()
 {
     // Robust check: test I2C communication with the GRBL module
@@ -92,7 +100,7 @@ bool Conveyor::checkConnection()
 
     if (error != 0)
     {
-        Serial.printf("❌ GRBL Motor not detected at 0x%X (I2C error: %d)\n", CONVEYOR_ADDR, error);
+        LOG_ERROR("Conveyor", "GRBL module not detected at 0x%X (I2C error %d)", CONVEYOR_ADDR, error);
         return false;
     }
 
@@ -101,24 +109,23 @@ bool Conveyor::checkConnection()
 
     if (status.length() == 0)
     {
-        Serial.println("❌ GRBL Motor detected but not responding to commands");
+        LOG_ERROR("Conveyor", "GRBL module does not answer commands");
         return false;
     }
 
     // Step 3: check that the module is not in an error state
     if (_grbl->inLock())
     {
-        Serial.println("❌ GRBL Motor is in LOCK/ALARM state");
-        Serial.println("   Module needs to be unlocked before use");
-        return false;
+        LOG_ERROR("Conveyor", "GRBL module is locked, unlock it before use");
+                return false;
     }
 
-    Serial.println("✅ GRBL Motor detected and operational at " + String(CONVEYOR_ADDR, HEX));
-    Serial.println(status);
-    return true;
+    LOG_INFO("Conveyor", "GRBL module operational at 0x%X", CONVEYOR_ADDR);
+        return true;
 }
 
-// ✨ CORE OF THE SYSTEM: reading the state from the hardware
+// Reads the state from the GRBL module and returns it.
+// The status letter is mapped to a ConveyorState; a missing answer is counted (see the watchdog below).
 ConveyorState Conveyor::readHardwareState()
 {
     ConveyorState newState = _currentState;
@@ -157,12 +164,13 @@ ConveyorState Conveyor::readHardwareState()
             break;
         }
 
-        // Debug: print the raw code
     }
     else
     {
         _missedReplies++;
 
+        // Watchdog: after MISSED_REPLIES_LIMIT silent reads the module is treated as failed.
+        // The critical error is raised only once, on the read that reaches the limit.
         if (_missedReplies >= MISSED_REPLIES_LIMIT)
         {
             // Silence for too long: do not assume the belt is still running
@@ -190,10 +198,7 @@ ConveyorState Conveyor::readHardwareState()
     // === STATE UPDATE (automatic) ===
     if (newState != _currentState)
     {
-        Serial.print("🔄 Hardware state change: ");
-        Serial.print(stateToString(_currentState));
-        Serial.print(" → ");
-        Serial.println(stateToString(newState));
+        LOG_INFO("Conveyor", "state %s -> %s", stateToString(_currentState).c_str(), stateToString(newState).c_str());
 
         _currentState = newState; // ← The only place where the state is changed
         // The StateManager will detect this change automatically
@@ -202,7 +207,8 @@ ConveyorState Conveyor::readHardwareState()
     return newState;
 }
 
-// ✨ SIMPLIFIED MONITORING - NO manual triggerError
+// Called on every loop pass. The hardware is read at most every 100 ms.
+// The state rules run in the StateManager, not here.
 void Conveyor::monitorHardware()
 {
     static unsigned long lastCheck = 0;
@@ -224,13 +230,13 @@ void Conveyor::monitorHardware()
     }
 }
 
-// ✨ SIMPLIFIED COMMANDS (no manual setState)
+// Commands only send orders to the motor. The resulting state comes from the next hardware read.
 void Conveyor::start()
 {
     // Unlock if needed
     if (_grbl->inLock())
     {
-        Serial.println("🔓 Unlocking module...");
+        LOG_INFO("Conveyor", "unlocking module");
         _grbl->unLock();
         delay(100);
     }
@@ -254,7 +260,7 @@ void Conveyor::move(bool forward)
         this->start(); // Start the motor if it is not already running
     }
 
-    // Increase the _movement value for a visible movement
+    // The sign of the step gives the direction: positive forward, negative backward.
     int angle = forward ? _movement : -_movement;
 
     // Called every loop tick: no log here, the state changes are logged by readHardwareState()

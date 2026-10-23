@@ -1,7 +1,12 @@
-#include "reader.h"
+// RFIDReader: reads card UIDs, with a cooldown so the same card is not read twice.
 
+#include "reader.h"
+#include "log.h"
+
+// I2C address of the MFRC522 reader.
 #define RFID_ADDR 0x28
 
+// A card seen again within this time is ignored: it is usually the same tag still on the reader.
 static const uint32_t COOLDOWN_MS = 1500;
 
 void RFIDReader::setHardware(IRfidDriver *driver, II2CBus *bus)
@@ -32,10 +37,12 @@ String RFIDReader::readUid()
     _hasTriggered = true;
     _lastTriggerMs = now;
 
+    // A UID has at most 10 bytes.
     uint8_t uidBytes[10];
     uint8_t size = _driver->uidBytes(uidBytes, sizeof(uidBytes));
 
     String uid;
+    // Each byte becomes two hex digits. A ':' goes between bytes, for example 04:1A:2B.
     for (uint8_t i = 0; i < size; i++)
     {
         if (uidBytes[i] < 0x10)
@@ -56,10 +63,10 @@ bool RFIDReader::checkConnection()
     uint8_t error = _bus->probe(RFID_ADDR);
 
     if (error == 0) {
-        Serial.println("✅ RFID I2C detected at 0x28");
+        LOG_INFO("RFID", "reader detected at 0x28");
         return true;
     } else {
-        Serial.printf("❌ RFID not detected at 0x28 (error: %d)\n", error);
+        LOG_ERROR("RFID", "reader not detected at 0x28 (I2C error %d)", error);
         return false;
     }
 }

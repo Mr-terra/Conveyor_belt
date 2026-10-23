@@ -1,3 +1,6 @@
+// RFIDReader tests: UID format, halting the card after each read,
+// and the 1.5 s cooldown between reads of the same card.
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

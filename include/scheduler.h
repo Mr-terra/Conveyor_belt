@@ -1,3 +1,6 @@
+// Scheduler: the state machine of the system.
+// WAITING -> CHECK_CONNECT -> INIT_POSITIONS -> PRODUCTION, plus ERROR.
+
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
@@ -19,17 +22,26 @@ enum class SchedulerState : uint8_t
     Error
 };
 
+// Runs the system state machine.
+// executeCurrentState() is called on every loop pass and does the work of the current state.
 class Scheduler {
 public:
+    // Sets the state to WAITING.
     void initialize();
+    // Changes the state and logs the change.
     void setState(SchedulerState state);
     SchedulerState getState();
+    // Starts the checks: WAITING -> CHECK_CONNECT.
     void triggerCheckConnect();
+    // Starts the position step: -> INIT_POSITIONS.
     void triggerInitPositions();
+    // Starts production: -> PRODUCTION.
     void triggerProduction();
+    // Stops the system: back to WAITING and the conveyor stopped (button B, or a failed step).
     void triggerStop();
     
     // Dependency configuration (MUST be called after initialize)
+    // Gives the scheduler the modules it drives. Called once from setup().
     void setDependencies(
         CheckConnect* checkConnect,
         InitPosition* initPosition,

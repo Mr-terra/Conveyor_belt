@@ -1,3 +1,6 @@
+// gMock doubles for every hardware interface in include/hal/.
+// Tests set the answers they need with EXPECT_CALL / ON_CALL.
+
 // gMock doubles for every hardware abstraction in include/hal/.
 #pragma once
 
