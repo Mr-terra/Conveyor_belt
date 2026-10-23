@@ -6,12 +6,6 @@ DolibarrAPI::DolibarrAPI(String url, String key)
     apiKey = key;
 }
 
-void DolibarrAPI::setEndpoint(String url, String key)
-{
-    baseUrl = url;
-    apiKey = key;
-}
-
 void DolibarrAPI::setTransport(IHttpClient *http, INetwork *network)
 {
     _http = http;
