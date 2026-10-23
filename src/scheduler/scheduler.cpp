@@ -104,6 +104,7 @@ void Scheduler::executeCurrentState() {
         // Check whether we can leave the ERROR state
         if (canRecoverFromError()) {
             Serial.println("🔧 Error conditions resolved - returning to WAITING");
+            Error::clearCriticalErrors();
             setState(STATE_WAITING);
         } else {
             Serial.println("🚫 Still in ERROR state - manual intervention may be required");
@@ -173,6 +174,12 @@ bool Scheduler::canRecoverFromError() {
         return false;
     }
     
+    // A critical error stays latched until the recovery succeeds
+    if (Error::hasCriticalErrors()) {
+        Serial.println("   Cannot recover - a critical error is still latched");
+        return false;
+    }
+
     // Check that the connections are OK
     bool connectionsOk = _checkConnect->checkConnections();
     if (!connectionsOk) {

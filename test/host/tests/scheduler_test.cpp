@@ -150,6 +150,20 @@ TEST_F(SchedulerTest, ErrorStateStaysWhenConveyorIsStillInAlarm)
     EXPECT_EQ(scheduler.getState(), STATE_ERROR);
 }
 
+TEST_F(SchedulerTest, LatchedCriticalErrorBlocksRecoveryUntilCleared)
+{
+    Error::triggerError("overheat", ERROR_CRITICAL, "Conveyor");
+    scheduler.setState(STATE_ERROR);
+
+    scheduler.executeCurrentState();
+    EXPECT_EQ(scheduler.getState(), STATE_ERROR);
+
+    Error::clearCriticalErrors();
+    scheduler.executeCurrentState();
+    EXPECT_EQ(scheduler.getState(), STATE_WAITING);
+    EXPECT_FALSE(Error::hasCriticalErrors());
+}
+
 TEST_F(SchedulerTest, ErrorStateStaysWhenConnectionsAreBroken)
 {
     ON_CALL(bus, probe(0x70)).WillByDefault(Return(2));
