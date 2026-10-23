@@ -13,9 +13,11 @@ Developed as part of the Epitech MSc Pro IoT project (T-IOT-911).
 
 - **Scheduler state machine**: `WAITING → CHECK_CONNECT → INIT_POSITIONS → PRODUCTION`, with an `ERROR` state that recovers automatically once the conditions are back to normal.
 - **Hardware-driven state**: the conveyor state is read from the GRBL module on every cycle. The software never assumes that a command worked.
-- **Error management**: errors are classified (`INFO`, `WARNING`, `CRITICAL`, `FATAL`). A critical error stays latched until the system has recovered.
+- **Error management**: errors are classified (`INFO`, `WARNING`, `CRITICAL`, `FATAL`). A critical error stops the system and stays latched until the operator presses Start (see [Usage](#usage)).
+- **Silent module watchdog**: if the GRBL module gives no status for 10 consecutive reads (1 s), the conveyor is treated as in alarm and a critical error is raised.
 - **Connection checks**: the Dolibarr API, the GRBL motor, the RFID reader and the servo board are probed before production starts.
-- **Sorting flow**: RFID read → Dolibarr product lookup → stock movement → servo moved to the matching bin.
+- **Sorting flow**: RFID read → Dolibarr product lookup → stock movement → servo moved to the matching bin. Parcels that cannot be routed go to the error bin.
+- **Timeouts**: HTTP requests to Dolibarr give up after 5 seconds, so a silent server cannot freeze the controls.
 - **Host unit tests**: the firmware logic runs on a PC with googletest and gMock, without an ESP32.
 
 ## Architecture
@@ -38,8 +40,22 @@ Only `src/hal/firmware/` talks to the M5Stack, GRBL, MFRC522, GoPlus2, HTTP and 
 | `II2CBus`        | Wire (pins 21 / 22)            | —                     |
 | `IRfidDriver`    | MFRC522_I2C (reset pin 33)     | `0x28`                |
 | `IServoDriver`   | GoPlus2 (servo channel 0)      | `0x38`                |
-| `IHttpClient`    | HTTPClient                     | —                     |
+| `IHttpClient`    | HTTPClient (5 s timeout)       | —                     |
 | `INetwork`       | WiFi                           | —                     |
+
+### Sorting bins
+
+| Destination        | Bin  | Servo angle |
+|--------------------|------|-------------|
+| Warehouse 1        | BIN1 | 0°          |
+| Warehouse 2        | BIN2 | 30°         |
+| Warehouse 3        | BIN3 | 60°         |
+| Error bin          | BIN1 | 0°          |
+
+The error bin is `Bin::ERROR_BIN` in `include/sorter_types.h`. It receives unknown cards and
+parcels whose stock movement Dolibarr rejects. It is the same physical bin as warehouse 1,
+so the serial log is the only way to tell those parcels apart. The warehouse table is in
+`src/sorter/addresser/addresser.cpp`.
 
 ## Prerequisites
 
@@ -62,6 +78,9 @@ WIFI_PASS=your-password
 
 `env_script.py` reads this file before every build and injects the values as compile-time
 definitions. The build fails with a clear message if one of them is missing.
+
+The values end up in `firmware.bin`. Anyone who gets the binary can read them, so treat the
+binary as sensitive.
 
 ## Build the Firmware
 
@@ -102,9 +121,11 @@ The M5Stack screen shows the current mode and conveyor state.
 
 | Button | Action                                                       |
 |--------|--------------------------------------------------------------|
-| **A**  | Start: connection check → position init → production         |
+| **A**  | Start: connection check → position init → production. From `ERROR`, Start acknowledges a latched critical error first. |
 | **B**  | Emergency stop: back to `WAITING`, conveyor stopped          |
 | **C**  | Show the system and conveyor state                           |
+
+After a critical error the system stops. Check the hardware, then press **A** to restart.
 
 The serial monitor prints every state transition, every hardware change and every error.
 
@@ -138,13 +159,25 @@ Then open `http://localhost:80` and:
 
 ## Continuous Integration
 
-GitHub Actions runs on every push and pull request (`.github/workflows/ci.yml`):
+GitHub Actions runs on every push to `main` (`.github/workflows/ci.yml`). Other branches and
+pull requests do not trigger it. Concurrent runs for the same branch are cancelled.
 
 - **Unit Tests**: configures and builds the host tests with CMake, then runs them with CTest.
 - **Firmware Build (PlatformIO)**: writes `.env` from repository secrets, builds `m5stack-grey` and uploads `firmware.bin` as an artifact.
 
 The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_KEY`,
 `WIFI_SSID`, `WIFI_PASS`.
+
+## Known Limitations
+
+- **No hardware emergency stop.** Button B stops the motor in software only. A real
+  emergency stop has to cut the motor power in hardware.
+- **Error bin shared with warehouse 1.** See [Sorting bins](#sorting-bins).
+- **Secrets in the binary.** See [Configuration](#configuration).
+- **Initialization is a placeholder.** `InitPosition` logs its steps and returns success; it does
+  not load motor parameters or home the sorter yet.
+- **Not yet tested on the hardware.** The servo routing, the watchdog and the error bin are covered
+  by the host tests only.
 
 ## Project Structure
 
@@ -171,7 +204,8 @@ The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_K
 
 Further documentation is in `docs/`: system usage (`SYSTEM_USAGE.md`), build and test
 details (`CMAKE_BUILD_TESTS.md`), the state flow (`state_management_error.md`) and the
-test protocol (`TEST_PROTOCOL.md`).
+test protocol (`TEST_PROTOCOL.md`). `TEST_PROTOCOL.md` is a manual protocol from the school
+project; its Python file layout is historical.
 
 ## License
 
