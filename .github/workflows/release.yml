@@ -1,7 +1,10 @@
 name: Release
 
-# Publishes the firmware as a GitHub Release when a version tag is pushed,
+# Creates a GitHub Release with generated notes when a version tag is pushed,
 # for example: git tag v1.0.0 && git push perso v1.0.0
+#
+# The firmware binary is not attached: it contains the Wi-Fi and Dolibarr secrets
+# from the build environment, so it must not be published. Build it from source.
 
 on:
   push:
@@ -13,41 +16,11 @@ permissions:
 
 jobs:
   release:
-    name: Build and publish firmware
+    name: Create GitHub Release
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install PlatformIO
-      run: pip install platformio
-
-    - name: Create .env from repository secrets
-      env:
-        DOLIBARR_URL: ${{ secrets.DOLIBARR_URL }}
-        DOLIBARR_API_KEY: ${{ secrets.DOLIBARR_API_KEY }}
-        WIFI_SSID: ${{ secrets.WIFI_SSID }}
-        WIFI_PASS: ${{ secrets.WIFI_PASS }}
-      run: |
-        {
-          echo "DOLIBARR_URL=$DOLIBARR_URL"
-          echo "DOLIBARR_API_KEY=$DOLIBARR_API_KEY"
-          echo "WIFI_SSID=$WIFI_SSID"
-          echo "WIFI_PASS=$WIFI_PASS"
-        } > .env
-
-    - name: Build firmware
-      run: pio run -e m5stack-grey
-
-    - name: Copy firmware under the tag name
-      run: cp .pio/build/m5stack-grey/firmware.bin "firmware-${GITHUB_REF_NAME}.bin"
-
     - name: Publish GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: firmware-${{ github.ref_name }}.bin
         generate_release_notes: true

@@ -94,12 +94,15 @@ The platform is pinned to `espressif32@6.12.0` in `platformio.ini`. The M5Stack 
 library needs the Arduino-ESP32 2.x core; newer platform releases ship a 3.x core that
 does not build it.
 
-## Download a Release
+## Releases
 
-Version tags (`v*`) are published under **Releases** with the compiled image as
-`firmware-<tag>.bin`. The release workflow (`.github/workflows/release.yml`) builds it with the same
-secrets as the CI. Building from source with `pio run -e m5stack-grey -t upload` is the route that
-has been tested.
+Version tags (`v*`) create a GitHub Release with generated notes. The firmware binary is **not**
+attached: it contains the Wi-Fi password and the Dolibarr API key from the build environment.
+To get the firmware, write `.env` and build it from source:
+
+```bash
+pio run -e m5stack-grey
+```
 
 ## Flash and Monitor
 
