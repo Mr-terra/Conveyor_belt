@@ -91,12 +91,8 @@ void SorterController::production()
 
   setState(SorterState::RfidRead);
 
-  Serial.print("UID: ");
-  Serial.println(uidRead);
 
   Bin::Id bin = addresser.resolve(uidRead);
-  Serial.print("Bin return: ");
-  Serial.println((int)bin);
   if (bin == Bin::NONE)
   {
     setState(SorterState::RfidReadingError);

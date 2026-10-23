@@ -51,16 +51,9 @@ boolean DolibarrAPI::checkConnection()
 
     String url = baseUrl + "/users/info";
 
-    Serial.print("URL: ");
-    Serial.println(url);
-    Serial.print("ESP32 IP: ");
-    Serial.println(_network->localIp());
-    Serial.print("Gateway: ");
-    Serial.println(_network->gatewayIp());
-
     HttpResponse response = _http->get(url, apiKey);
-    Serial.print(" http.GET(): ");
-    Serial.print(response.statusCode);
+    if (response.statusCode != 200)
+        Serial.printf("Dolibarr answered HTTP %d\n", response.statusCode);
 
     return response.statusCode == 200;
 }

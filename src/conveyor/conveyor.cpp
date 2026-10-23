@@ -78,7 +78,6 @@ void Conveyor::initialize(StateManager &stateManager)
     readHardwareState();
 
     Serial.println("✅ Conveyor initialized with Module GRBL 13.2");
-    Serial.print("📊 Initial state: ");
     Serial.println(stateToString(_currentState));
 
     configureStateMonitoring(stateManager);
@@ -94,11 +93,6 @@ bool Conveyor::checkConnection()
     if (error != 0)
     {
         Serial.printf("❌ GRBL Motor not detected at 0x%X (I2C error: %d)\n", CONVEYOR_ADDR, error);
-        Serial.println("   Possible causes: ");
-        Serial.println("   - Module not powered");
-        Serial.println("   - Wrong I2C address");
-        Serial.println("   - I2C bus not initialized");
-        Serial.println("   - Wiring issue");
         return false;
     }
 
@@ -108,9 +102,6 @@ bool Conveyor::checkConnection()
     if (status.length() == 0)
     {
         Serial.println("❌ GRBL Motor detected but not responding to commands");
-        Serial.println("   Possible causes: ");
-        Serial.println("   - Module not properly initialized");
-        Serial.println("   - Communication error");
         return false;
     }
 
@@ -123,7 +114,6 @@ bool Conveyor::checkConnection()
     }
 
     Serial.println("✅ GRBL Motor detected and operational at " + String(CONVEYOR_ADDR, HEX));
-    Serial.print("📊 Current status: ");
     Serial.println(status);
     return true;
 }
@@ -168,14 +158,6 @@ ConveyorState Conveyor::readHardwareState()
         }
 
         // Debug: print the raw code
-        if (newState != _currentState)
-        {
-            Serial.print("📡 Raw status: '");
-            Serial.print(stateChar);
-            Serial.print("' (");
-            Serial.print((int)stateChar);
-            Serial.println(")");
-        }
     }
     else
     {
@@ -254,7 +236,6 @@ void Conveyor::start()
     }
 
     _isRunning = true;
-    Serial.println("✅ Conveyor start command sent");
     // The state will switch to RUNNING automatically via readHardwareState()
 }
 
@@ -263,7 +244,6 @@ void Conveyor::stop()
     _grbl->setMotor(0, 0, 0, 0);
     _grbl->waitIdle(); // Wait until the motor has really stopped
     _isRunning = false;
-    Serial.println("🛑 Conveyor stop command sent");
     // The state will switch to STOPPED automatically via readHardwareState()
 }
 

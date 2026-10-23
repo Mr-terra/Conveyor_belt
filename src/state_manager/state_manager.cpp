@@ -63,7 +63,6 @@ void StateManager::handleCriticalStateChange(String module, String newState, Err
 void StateManager::setScheduler(Scheduler* scheduler)
 {
     _scheduler = scheduler;
-    Serial.println("✅ StateManager configured with Scheduler reference");
 }
 
 // States a module is expected to stay in for a long time (idle, or running normally)

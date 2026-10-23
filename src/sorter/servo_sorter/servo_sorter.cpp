@@ -44,30 +44,19 @@ void ServoSorter::init(StateManager &stateManager)
 
 int ServoSorter::angleFor(Bin::Id bin) const
 {
-    Serial.print("angleFor() bin=");
-    Serial.println((int)bin);
-
     switch (bin)
     {
-    case Bin::BIN1:
-        Serial.print("BIN1 angle");
-        return 0;
     case Bin::BIN2:
-        Serial.print("BIN2 angle");
-
         return 30;
     case Bin::BIN3:
-        Serial.print("BIN3 angle");
         return 60;
     default:
-        Serial.print("Default angle");
         return 0;
     }
 }
 
 void ServoSorter::moveTo(Bin::Id bin)
 {
-    Serial.print("Servo called with bin: ");
     Serial.println((int)bin);
 
     if (bin == Bin::NONE)
@@ -81,7 +70,6 @@ void ServoSorter::moveTo(Bin::Id bin)
 
     uint8_t angle = (uint8_t)angleFor(bin);
 
-    Serial.print("Servo moved to angle: ");
     Serial.println(angle);
 
     _driver->writeAngle(SERVO_CHANNEL, angle);

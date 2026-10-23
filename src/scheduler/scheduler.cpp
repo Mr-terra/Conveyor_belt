@@ -96,21 +96,15 @@ void Scheduler::triggerStop()
 void Scheduler::executeCurrentState() {
     // ERROR state is handled first
     if (_current_state == SchedulerState::Error) {
-        Serial.println("⚠️  System in ERROR state - checking recovery conditions");
-        
         // Check whether we can leave the ERROR state
         if (canRecoverFromError()) {
             Serial.println("🔧 Error conditions resolved - returning to WAITING");
             Error::clearCriticalErrors();
             setState(SchedulerState::Waiting);
-        } else {
-            Serial.println("🚫 Still in ERROR state - manual intervention may be required");
         }
         return; // Do not run other states in ERROR mode
     }
-    
     if (_current_state == SchedulerState::CheckConnect) {
-        Serial.println("🔍 Executing CHECK_CONNECT state");
         if (_checkConnect != nullptr) {
             bool connectionsOk = _checkConnect->checkConnections();
             if (connectionsOk) {
@@ -126,7 +120,6 @@ void Scheduler::executeCurrentState() {
         }
     }
     else if (_current_state == SchedulerState::InitPositions) {
-        Serial.println("🔧 Executing INIT_POSITIONS state");
         if (_initPosition != nullptr) {
             bool initOk = _initPosition->initializePositions();
             if (initOk) {
@@ -148,7 +141,6 @@ void Scheduler::executeCurrentState() {
             setState(SchedulerState::Waiting);
             return;
         }
-        
         if (_conveyor != nullptr) {
             _conveyor->move(true); // Mouvement continu
         }
@@ -164,29 +156,23 @@ void Scheduler::executeCurrentState() {
 // Check whether we can leave the ERROR state
 bool Scheduler::canRecoverFromError() {
     if (_checkConnect == nullptr || _conveyor == nullptr) {
-        Serial.println("   Cannot recover - dependencies not configured");
         return false;
     }
     
     // A critical error stays latched until the recovery succeeds
     if (Error::hasCriticalErrors()) {
-        Serial.println("   Cannot recover - a critical error is still latched");
         return false;
     }
 
     // Check that the connections are OK
     bool connectionsOk = _checkConnect->checkConnections();
     if (!connectionsOk) {
-        Serial.println("   Cannot recover - connection check failed");
         return false;
     }
     
     // Check that the conveyor is not in ALARM
     if (_conveyor->getState() == ConveyorState::Alarm) {
-        Serial.println("   Cannot recover - conveyor still in ALARM state");
         return false;
     }
-    
-    Serial.println("   All recovery conditions met");
     return true;
 }

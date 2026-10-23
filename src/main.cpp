@@ -56,7 +56,6 @@ void setup()
     scheduler.initialize();
     initPosition.initialize();
     addresser.setDolibarrAPI(&dolibarrApi);
-    Serial.printf("[SETUP] &addresser=%p  &dolibarrApi=%p\n", (void *)&addresser, (void *)&dolibarrApi);
 
     // 1) WiFi
     WiFi.mode(WIFI_STA);

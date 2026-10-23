@@ -44,7 +44,6 @@ bool CheckConnect::areDependenciesConfigured()
 
 bool CheckConnect::checkConnections()
 {
-    Serial.println("\n🔍 === Checking all connections ===");
 
     // Check that all dependencies are configured
     if (!areDependenciesConfigured())
@@ -73,7 +72,6 @@ bool CheckConnect::checkConnections()
 
 bool CheckConnect::checkDolibarrConnection()
 {
-    Serial.println("🌐 Checking Dolibarr connection...");
 
     if (_dolibarrApi == nullptr)
     {
@@ -97,7 +95,6 @@ bool CheckConnect::checkDolibarrConnection()
 
 bool CheckConnect::checkMotorConnection()
 {
-    Serial.println("🔧 Checking Motor connection...");
 
     if (_conveyor == nullptr)
     {
@@ -110,7 +107,6 @@ bool CheckConnect::checkMotorConnection()
 
 bool CheckConnect::checkSorterConnection()
 {
-    Serial.println("📦 Checking Sorter connection...");
 
     if (_sorterController == nullptr)
     {

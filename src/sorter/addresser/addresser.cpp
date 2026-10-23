@@ -22,7 +22,6 @@ void Addresser::setDolibarrAPI(DolibarrAPI *api)
 
 Bin::Id Addresser::resolve(const String &uid) const
 {
-    Serial.printf("[RESOLVE] this=%p  _api=%p\n", (void *)this, (void *)_api);
     if (_api == nullptr)
     {
         Serial.println("[ERR] DolibarrAPI not set (Addresser::_api is null)");
@@ -37,15 +36,10 @@ Bin::Id Addresser::resolve(const String &uid) const
         Serial.println("[ERR] Empty HTTP response");
         return Bin::NONE;
     }
-    Serial.print(jsonResponse);
 
     int warehouseId = extractWarehouseId(jsonResponse);
     int productId = extractProductId(jsonResponse);
 
-    Serial.print("Warehouse ID: ");
-    Serial.println(warehouseId);
-    Serial.print("Product ID: ");
-    Serial.println(productId);
 
     for (const WarehouseBin &route : WAREHOUSE_BINS)
     {
