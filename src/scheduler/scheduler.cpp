@@ -30,12 +30,6 @@ String Scheduler::stateToString(String state)
     return "UNKNOWN";
 }
 
-// Pointers to the dependencies
-static CheckConnect* _checkConnect = nullptr;
-static InitPosition* _initPosition = nullptr;
-static SorterController* _sorterController = nullptr;
-static Conveyor* _conveyor = nullptr;
-
 void Scheduler::initialize() {
     _current_state = STATE_WAITING;
     Serial.println("Scheduler initialized. State: WAITING");

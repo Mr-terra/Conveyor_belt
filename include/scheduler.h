@@ -42,6 +42,12 @@ public:
 
 private:
     String _current_state;
+
+    // Dependencies injected through setDependencies()
+    CheckConnect* _checkConnect = nullptr;
+    InitPosition* _initPosition = nullptr;
+    SorterController* _sorterController = nullptr;
+    Conveyor* _conveyor = nullptr;
     bool canRecoverFromError(); // Checks whether the error conditions have been resolved
 };
 

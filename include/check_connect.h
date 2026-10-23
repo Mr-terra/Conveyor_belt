@@ -26,9 +26,9 @@ public:
     bool areDependenciesConfigured();
 
 private:
-    DolibarrAPI* dolibarrApi = nullptr;
-    Conveyor* conveyor = nullptr;
-    SorterController* sorterController = nullptr;
+    DolibarrAPI* _dolibarrApi = nullptr;
+    Conveyor* _conveyor = nullptr;
+    SorterController* _sorterController = nullptr;
 };
 
 #endif

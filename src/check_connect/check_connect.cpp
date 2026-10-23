@@ -5,14 +5,6 @@
 #include <Arduino.h>
 
 CheckConnect checkConnect;
-extern Conveyor conveyor;
-extern SorterController sorterController;
-extern DolibarrAPI dolibarrApi;
-
-// Pointers to the dependencies (dependency injection)
-static Conveyor *_conveyor = nullptr;
-static SorterController *_sorterController = nullptr;
-static DolibarrAPI *_dolibarrApi = nullptr;
 
 void CheckConnect::setDolibarrAPI(DolibarrAPI *api)
 {
