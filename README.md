@@ -119,7 +119,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-googletest 1.14.0 and ArduinoJson 6.21.5 are fetched automatically at configure time.
+googletest 1.14.0 and ArduinoJson 7.4.3 are fetched automatically at configure time.
 
 ## Dolibarr Setup
 

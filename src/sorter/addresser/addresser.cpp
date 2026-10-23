@@ -67,7 +67,7 @@ String Addresser::cleanUid(const String &uid) const
 
 int Addresser::extractWarehouseId(const String &json) const
 {
-    DynamicJsonDocument doc(4096);
+    JsonDocument doc;
 
     DeserializationError error = deserializeJson(doc, json.c_str());
 
@@ -102,7 +102,7 @@ int Addresser::extractWarehouseId(const String &json) const
 
 int Addresser::extractProductId(const String &json) const
 {
-    DynamicJsonDocument doc(4096);
+    JsonDocument doc;
 
     DeserializationError error = deserializeJson(doc, json.c_str());
     if (error)

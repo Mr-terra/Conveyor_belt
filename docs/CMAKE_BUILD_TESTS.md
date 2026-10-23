@@ -116,7 +116,7 @@ target_link_libraries(conveyor
 
 This file configures the host build of the firmware logic and the unit tests:
 
-- Fetches googletest 1.14.0 and ArduinoJson 6.21.5 (`FetchContent`, no system install)
+- Fetches googletest 1.14.0 and ArduinoJson 7.4.3 (`FetchContent`, no system install)
 - Builds the firmware logic (`firmware_logic`) for the PC, without the ESP32-only adapters in `src/hal/firmware/`
 - Builds the `host_tests` executable and registers its tests with CTest
 

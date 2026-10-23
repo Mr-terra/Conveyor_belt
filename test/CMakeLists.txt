@@ -5,7 +5,7 @@ FetchContent_Declare(googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
 )
 FetchContent_Declare(arduinojson
-    URL https://github.com/bblanchon/ArduinoJson/archive/refs/tags/v6.21.5.zip
+    URL https://github.com/bblanchon/ArduinoJson/archive/refs/tags/v7.4.3.zip
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)

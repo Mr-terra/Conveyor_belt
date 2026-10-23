@@ -52,7 +52,7 @@ TEST_F(DolibarrApiTest, CreateStockMovementSendsValidJson)
 
     api.createStockMovement(12, 2, 1);
 
-    DynamicJsonDocument doc(512);
+    JsonDocument doc;
     DeserializationError error = deserializeJson(doc, sentBody.c_str());
     ASSERT_FALSE(error) << "body was: " << sentBody.c_str();
     EXPECT_EQ(doc["product_id"].as<int>(), 12);
