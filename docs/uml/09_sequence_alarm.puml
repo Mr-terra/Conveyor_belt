@@ -1,0 +1,41 @@
+@startuml 09_sequence_alarm
+title Sequence: conveyor alarm and operator restart
+skinparam defaultFontSize 12
+
+participant "loop()" as L
+participant "Conveyor" as C
+participant "GRBL module" as G
+participant "StateManager" as SM
+participant "Error" as E
+participant "Scheduler" as SC
+actor "Operator" as O
+
+== Detection (same loop pass) ==
+L -> C : monitorHardware()  [every 100 ms]
+C -> G : readStatus()
+G --> C : "A" (alarm)
+C -> C : _currentState = ALARM
+L -> SM : monitorAllStates()
+SM -> SM : change RUNNING -> ALARM
+SM -> E : triggerError("Hardware alarm while running", CRITICAL)
+SM -> SM : handleCriticalStateChange(CRITICAL)
+note right : PRODUCTION -> WAITING
+SM -> E : triggerError("GRBL ALARM", FATAL)
+SM -> SM : handleCriticalStateChange(FATAL)
+SM -> SC : setState(ERROR)
+note over E : critical latch set
+
+== Next pass ==
+L -> SC : executeCurrentState()
+SC -> SC : state is ERROR
+SC -> SC : canRecoverFromError()
+note right : refused: critical error latched
+SC --> L : stays in ERROR
+
+== Operator restart ==
+O -> L : presses Button A
+L -> E : clearCriticalErrors()
+L -> SC : triggerCheckConnect()
+SC -> SC : CHECK_CONNECT, then INIT_POSITIONS, then PRODUCTION
+note over SC : if the fault persists, the checks fail\nand the system returns to WAITING
+@enduml

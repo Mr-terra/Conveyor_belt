@@ -1,0 +1,37 @@
+@startuml 07_sequence_startup
+title Sequence: start-up (setup)
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+
+participant "main.cpp" as M
+participant "firmware_hal" as H
+participant "Conveyor" as C
+participant "SorterController" as S
+participant "Scheduler" as SC
+participant "InitPosition" as IP
+participant "CheckConnect" as CC
+participant "StateManager" as SM
+participant "DolibarrAPI" as D
+
+M -> M : Serial.begin, Wire.begin(21, 22), M5.begin()
+M -> H : bindFirmwareHardware()
+H -> C : setHardware(GRBL adapter, Wire)
+H -> S : setHardware(RFID, servo, Wire)
+M -> C : initialize(stateManager)
+C -> C : readHardwareState()
+C -> SM : observeState(&_currentState, "Conveyor")
+C -> SM : addStateRule(...) x6
+M -> S : initialize(stateManager)
+S -> SM : observeState(sorterState) and servo state
+M -> SC : initialize()
+M -> IP : initialize()
+M -> D : setEndpoint(url, key) from .env
+M -> M : WiFi.begin(SSID, pass), wait up to 15 s
+M -> CC : setDolibarrAPI, setConveyor, setSorterController
+M -> CC : checkDolibarrConnection()
+CC -> D : checkConnection()
+M -> SC : setDependencies(CC, IP, S, C)
+M -> SM : setScheduler(SC)
+M -> SC : triggerStop()
+note over SC : state = WAITING
+@enduml

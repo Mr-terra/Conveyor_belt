@@ -1,0 +1,35 @@
+@startuml 03_state_scheduler
+title Scheduler state machine\n(src/scheduler/scheduler.cpp, button handling in src/main.cpp)
+skinparam defaultFontSize 13
+skinparam state {
+  BackgroundColor #DAE8FC
+  BorderColor #6C8EBF
+  BackgroundColor<<error>> #F8CECC
+  BorderColor<<error>> #B85450
+}
+
+[*] --> WAITING : setup() ends with triggerStop()
+
+state WAITING : nothing is driven
+state CHECK_CONNECT : Dolibarr, GRBL, RFID and servo\nare probed
+state INIT_POSITIONS : placeholder steps
+state PRODUCTION : conveyor moves forward every tick\nsorter.production() runs every tick
+state ERROR <<error>> : conveyor stopped\ncritical error may be latched
+
+WAITING --> CHECK_CONNECT : Button A
+CHECK_CONNECT --> INIT_POSITIONS : checkConnections() OK
+CHECK_CONNECT --> WAITING : a check fails
+INIT_POSITIONS --> PRODUCTION : initializePositions() OK
+INIT_POSITIONS --> WAITING : initialization fails
+PRODUCTION --> WAITING : Button B (triggerStop)
+PRODUCTION --> WAITING : conveyor is ALARM\n(guard in executeCurrentState)
+PRODUCTION --> ERROR : conveyor ALARM\n(state rules CRITICAL + FATAL)
+ERROR --> WAITING : auto recovery\n[no latched critical error\n and connections OK]
+ERROR --> CHECK_CONNECT : Button A\n(clears the latched critical error first)
+
+note right of ERROR
+  Automatic recovery never clears a
+  latched critical error. Only Button A
+  does, from ERROR or WAITING.
+end note
+@enduml

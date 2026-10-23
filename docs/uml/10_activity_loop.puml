@@ -1,0 +1,40 @@
+@startuml 10_activity_loop
+title Activity: one pass of loop()
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #FBFBFB
+  BorderColor #555555
+}
+
+start
+:M5.update();
+:conveyor.monitorHardware()\n(reads GRBL every 100 ms);
+:stateManager.monitorAllStates()\n(compare, apply rules, stuck warnings);
+if (Dolibarr not yet checked\nand Wi-Fi connected?) then (yes)
+  :dolibarrApi.checkConnection();
+endif
+if (Button A pressed?) then (yes)
+  if (state WAITING or ERROR?) then (yes)
+    :Error::clearCriticalErrors();
+    :scheduler.triggerCheckConnect();
+  else (no)
+    :log: busy or already running;
+  endif
+else (no)
+  if (Button B pressed?) then (yes)
+    :scheduler.triggerStop();
+  else (no)
+    if (Button C pressed?) then (yes)
+      :show state for 2 s;
+    endif
+  endif
+endif
+:scheduler.executeCurrentState();
+note right
+  Runs the step of the current state:
+  CHECK_CONNECT, INIT_POSITIONS,
+  PRODUCTION (move + sort) or ERROR.
+end note
+:delay(100);
+stop
+@enduml

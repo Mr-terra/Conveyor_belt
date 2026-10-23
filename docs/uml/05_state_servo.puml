@@ -1,0 +1,20 @@
+@startuml 05_state_servo
+title Servo (diverter) state machine\n(src/sorter/servo_sorter/servo_sorter.cpp)
+skinparam defaultFontSize 13
+skinparam state {
+  BackgroundColor #DAE8FC
+  BorderColor #6C8EBF
+}
+
+[*] --> INIT : constructed
+INIT --> IDLE : init(): driver begin(),\npark at 30 degrees\n(same angle as BIN2)
+IDLE --> MOVING : moveTo(bin)\nbin is NONE -> ERROR_BIN (BIN1, 0 degrees)
+MOVING --> IDLE : writeAngle(0, angle) done
+
+note right of MOVING
+  Angle per bin:
+  BIN1 = 0, BIN2 = 30, BIN3 = 60 degrees.
+  The servo has no feedback: the angle is
+  trusted, not measured.
+end note
+@enduml

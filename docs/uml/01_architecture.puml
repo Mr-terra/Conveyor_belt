@@ -1,0 +1,86 @@
+@startuml 01_architecture
+title Architecture: logic, hardware abstraction and firmware adapters
+skinparam defaultFontSize 12
+skinparam componentStyle rectangle
+skinparam package {
+  BackgroundColor #FBFBFB
+}
+
+package "Application logic  (src/, built for the PC too)" {
+  [main.cpp\nsetup() / loop() / buttons] as main
+  [Scheduler] as sched
+  [StateManager] as sm
+  [Error] as err
+  [CheckConnect] as cc
+  [InitPosition] as ip
+  [Conveyor] as conv
+  [SorterController] as sc
+  [RFIDReader] as rfid
+  [Addresser] as addr
+  [ServoSorter] as servo
+  [DolibarrAPI] as api
+}
+
+package "Hardware abstraction  (include/hal/)" {
+  interface "IGrblMotor" as iG
+  interface "II2CBus" as iI
+  interface "IRfidDriver" as iR
+  interface "IServoDriver" as iS
+  interface "IHttpClient" as iH
+  interface "INetwork" as iN
+}
+
+package "Firmware adapters  (src/hal/firmware/, ESP32 only)" {
+  [GrblModuleMotor] as aG
+  [WireI2CBus] as aI
+  [Mfrc522Driver] as aR
+  [GoPlusServoDriver] as aS
+  [HttpClientTransport] as aH
+  [WifiNetwork] as aN
+}
+
+main --> sched
+main --> conv
+main --> sc
+main --> sm
+main --> cc
+main --> ip
+sched --> cc
+sched --> ip
+sched --> sc
+sched --> conv
+cc --> api
+cc --> conv
+cc --> sc
+sc --> rfid
+sc --> addr
+sc --> servo
+addr --> api
+conv --> sm
+sc --> sm
+servo --> sm
+sm --> err
+conv --> err
+api --> err
+
+conv ..> iG
+conv ..> iI
+rfid ..> iR
+rfid ..> iI
+servo ..> iS
+servo ..> iI
+api ..> iH
+api ..> iN
+
+aG ..|> iG
+aI ..|> iI
+aR ..|> iR
+aS ..|> iS
+aH ..|> iH
+aN ..|> iN
+
+note bottom of aG
+  bindFirmwareHardware() in setup()
+  connects these adapters to the logic.
+end note
+@enduml

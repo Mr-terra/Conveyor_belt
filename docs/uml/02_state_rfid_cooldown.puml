@@ -1,0 +1,13 @@
+@startuml 02_state_rfid_cooldown
+title RFID reader cooldown\n(src/sorter/rfid_reader/reader.cpp, COOLDOWN_MS = 1500)
+skinparam defaultFontSize 13
+
+[*] --> Ready
+state Ready
+state Cooldown
+
+Ready --> Ready : no card present\n[returns empty UID]
+Ready --> Cooldown : card read OK\n[card halted, UID returned,\n_lastTriggerMs set]
+Cooldown --> Cooldown : card seen within 1.5 s\n[halted, ignored, timer NOT reset]
+Cooldown --> Ready : 1.5 s elapsed
+@enduml

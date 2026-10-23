@@ -1,0 +1,170 @@
+@startuml 06_class_diagram
+title Class diagram: interfaces, firmware adapters and logic classes
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+package "include/hal  (interfaces)" {
+  interface IGrblMotor {
+    +init()
+    +setMode(mode)
+    +inLock() : bool
+    +unLock()
+    +setMotor(a, b, c, d)
+    +readStatus() : String
+    +readIdle() : bool
+  }
+  interface II2CBus {
+    +probe(address) : uint8_t
+  }
+  interface IRfidDriver {
+    +init()
+    +isNewCardPresent() : bool
+    +readCardSerial() : bool
+    +uidBytes(buffer, max) : uint8_t
+    +halt()
+  }
+  interface IServoDriver {
+    +begin()
+    +writeAngle(channel, angle)
+  }
+  interface IHttpClient {
+    +get(url, apiKey) : HttpResponse
+    +post(url, apiKey, body) : HttpResponse
+  }
+  interface INetwork {
+    +isConnected() : bool
+    +localIp() : String
+    +gatewayIp() : String
+  }
+  class HttpResponse <<struct>> {
+    +statusCode : int
+    +body : String
+  }
+}
+
+package "src/hal/firmware  (adapters)" {
+  class GrblModuleMotor
+  class WireI2CBus
+  class Mfrc522Driver
+  class GoPlusServoDriver
+  class HttpClientTransport
+  class WifiNetwork
+}
+
+IGrblMotor <|.. GrblModuleMotor
+II2CBus <|.. WireI2CBus
+IRfidDriver <|.. Mfrc522Driver
+IServoDriver <|.. GoPlusServoDriver
+IHttpClient <|.. HttpClientTransport
+INetwork <|.. WifiNetwork
+IHttpClient ..> HttpResponse
+
+package "src  (logic)" {
+  class Scheduler {
+    -_current_state : String
+    +initialize()
+    +setDependencies(...)
+    +executeCurrentState()
+    +triggerCheckConnect()
+    +triggerStop()
+    -canRecoverFromError() : bool
+  }
+  class StateManager {
+    +observeState(ptr, module, toString)
+    +addStateRule(module, from, to, level, msg)
+    +monitorAllStates()
+    +setScheduler(s)
+    -handleCriticalStateChange(...)
+  }
+  class Error <<static>> {
+    +triggerError(msg, level, module)
+    +hasCriticalErrors() : bool
+    +clearCriticalErrors()
+  }
+  class Conveyor {
+    -_currentState : String
+    -_missedReplies : int
+    +setHardware(motor, bus)
+    +initialize(sm)
+    +readHardwareState() : String
+    +monitorHardware()
+    +move(forward)
+    +start()
+    +stop()
+  }
+  class CheckConnect {
+    +checkConnections() : bool
+    +checkDolibarrConnection() : bool
+    +checkMotorConnection() : bool
+    +checkSorterConnection() : bool
+  }
+  class InitPosition {
+    +initializePositions() : bool
+  }
+  class SorterController {
+    -sorterState : String
+    +setHardware(rfid, servo, bus)
+    +initialize(sm)
+    +production()
+    +checkConnection() : bool
+  }
+  class RFIDReader {
+    -_hasTriggered : bool
+    -_lastTriggerMs : uint32_t
+    +setHardware(driver, bus)
+    +readUid() : String
+    +checkConnection() : bool
+  }
+  class Addresser {
+    +resolve(uid) : Bin::Id
+    -extractWarehouseId(json) : int
+  }
+  class ServoSorter {
+    -servoState : String
+    +setHardware(driver, bus)
+    +init(sm)
+    +moveTo(bin)
+    +checkConnection() : bool
+  }
+  class DolibarrAPI {
+    +setEndpoint(url, key)
+    +setTransport(http, network)
+    +getProductByBarcode(barcode) : String
+    +createStockMovement(p, w, q) : bool
+    +checkConnection() : bool
+  }
+  enum Bin {
+    NONE
+    BIN1
+    BIN2
+    BIN3
+    ERROR_BIN = BIN1
+  }
+}
+
+Scheduler --> CheckConnect
+Scheduler --> InitPosition
+Scheduler --> SorterController
+Scheduler --> Conveyor
+StateManager --> Scheduler
+Conveyor --> IGrblMotor
+Conveyor --> II2CBus
+Conveyor ..> StateManager : observes
+SorterController --> RFIDReader
+SorterController --> ServoSorter
+SorterController --> Addresser
+SorterController ..> StateManager : observes
+ServoSorter --> IServoDriver
+ServoSorter ..> Bin
+Addresser --> DolibarrAPI
+Addresser ..> Bin
+CheckConnect --> DolibarrAPI
+CheckConnect --> Conveyor
+CheckConnect --> SorterController
+DolibarrAPI --> IHttpClient
+DolibarrAPI --> INetwork
+RFIDReader --> IRfidDriver
+RFIDReader --> II2CBus
+@enduml

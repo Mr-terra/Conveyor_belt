@@ -1,0 +1,55 @@
+@startuml 08_sequence_sort_parcel
+title Sequence: sort one parcel (PRODUCTION, one loop pass)
+skinparam defaultFontSize 12
+
+participant "loop()" as L
+participant "Scheduler" as SC
+participant "Conveyor" as C
+participant "SorterController" as S
+participant "RFIDReader" as R
+participant "Addresser" as A
+participant "DolibarrAPI" as D
+participant "IHttpClient" as H
+participant "ServoSorter" as V
+
+L -> SC : executeCurrentState()
+SC -> C : getState()
+alt conveyor is ALARM
+  SC -> SC : setState(WAITING)
+else running
+  SC -> C : move(true)
+  SC -> S : production()
+  S -> R : readUid()
+  alt no card, or card within cooldown
+    R --> S : ""
+    S -> S : sorterState = WAITING
+  else card read
+    R --> S : "04:1A:2B:..."
+    S -> A : resolve(uid)
+    A -> D : getProductByBarcode("'041A2B...'")
+    D -> H : get(url, apiKey)
+    H --> D : HttpResponse(200, json)
+    D --> A : json
+    A -> A : extractWarehouseId, extractProductId
+    alt warehouse 1, 2 or 3 known
+      A -> D : createStockMovement(product, warehouse, 1)
+      D -> H : post(url, apiKey, body)
+      H --> D : 201 (or failure)
+      D --> A : true / false
+      alt movement recorded
+        A --> S : BIN1 / BIN2 / BIN3
+      else rejected
+        A --> S : ERROR_BIN (BIN1)
+      end
+    else unknown warehouse or lookup failed
+      A --> S : NONE
+    end
+    S -> V : moveTo(bin)
+    alt bin NONE
+      V -> V : use ERROR_BIN (BIN1)
+    end
+    V -> V : writeAngle(0, 0 / 30 / 60)
+    S -> S : sorterState = WAITING
+  end
+end
+@enduml

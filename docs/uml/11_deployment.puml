@@ -1,0 +1,27 @@
+@startuml 11_deployment
+title Deployment: hardware and network
+skinparam defaultFontSize 12
+
+node "M5Stack Grey (ESP32)\nfirmware.bin" as M5 {
+  component "Conveyor firmware" as FW
+}
+node "GRBL module 13.2\nI2C 0x70" as GRBL
+node "MFRC522 RFID reader\nI2C 0x28, reset pin 33" as RFID
+node "GoPlus2 servo board\nI2C 0x38, channel 0" as GOPLUS
+node "Servo (diverter)" as SERVO
+node "Conveyor motor" as MOTOR
+node "Wi-Fi access point" as AP
+node "Dolibarr server\nREST API /api/index.php" as DOL
+
+M5 -- GRBL : I2C SDA 21 / SCL 22
+M5 -- RFID : I2C
+M5 -- GOPLUS : I2C
+GRBL -- MOTOR : drives
+GOPLUS -- SERVO : PWM
+M5 -- AP : Wi-Fi 2.4 GHz
+AP -- DOL : HTTP with DOLAPIKEY header
+note bottom of M5
+  Secrets (SSID, Wi-Fi password, API URL and key)
+  are compiled in from .env at build time.
+end note
+@enduml

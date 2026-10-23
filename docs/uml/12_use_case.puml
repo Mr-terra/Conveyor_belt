@@ -1,0 +1,36 @@
+@startuml 12_use_case
+title Use cases
+skinparam defaultFontSize 12
+left to right direction
+
+actor "Operator" as OP
+actor "Maintainer" as MT
+actor "Dolibarr server" as DOL <<system>>
+
+rectangle "Conveyor sorting system" {
+  usecase "Start production (A)" as UC1
+  usecase "Stop (B)" as UC2
+  usecase "Show state (C)" as UC3
+  usecase "Load parcels" as UC4
+  usecase "Acknowledge a critical error\n(press A)" as UC5
+  usecase "Sort a parcel" as UC6
+  usecase "Look up parcel warehouse" as UC7
+  usecase "Record stock movement" as UC8
+  usecase "Read the serial log" as UC9
+  usecase "Set .env and flash firmware" as UC10
+}
+
+OP --> UC1
+OP --> UC2
+OP --> UC3
+OP --> UC4
+OP --> UC5
+OP --> UC9
+MT --> UC10
+MT --> UC9
+UC1 ..> UC6 : includes
+UC6 ..> UC7 : includes
+UC6 ..> UC8 : includes
+UC7 --> DOL
+UC8 --> DOL
+@enduml

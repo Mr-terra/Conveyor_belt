@@ -1,0 +1,40 @@
+@startuml 04_state_conveyor
+title Conveyor state machine\n(src/conveyor/conveyor.cpp, GRBL status read every 100 ms)
+skinparam defaultFontSize 13
+skinparam state {
+  BackgroundColor #DAE8FC
+  BorderColor #6C8EBF
+  BackgroundColor<<error>> #F8CECC
+  BorderColor<<error>> #B85450
+}
+
+[*] --> STOPPED : first readHardwareState() in initialize()
+
+state STOPPED
+state RUNNING
+state ALARM <<error>>
+
+STOPPED --> RUNNING : status R, J or H\n[INFO: Motor started]
+RUNNING --> STOPPED : status I\n[INFO: Motor stopped]
+STOPPED --> ALARM : status A\n[CRITICAL and FATAL rules]
+RUNNING --> ALARM : status A\n[CRITICAL and FATAL rules]
+ALARM --> STOPPED : status I\n[WARNING: recovered]
+
+state "No reply from GRBL" as SILENT {
+  state "missed < 10" as Counting
+  state "missed >= 10" as Silent
+  [*] --> Counting
+  Counting --> Counting : missed += 1\nfallback: lock -> ALARM,\nidle -> STOPPED, else RUNNING
+  Counting --> Silent : 10th missed read (1 s)
+}
+STOPPED --> SILENT : no reply
+RUNNING --> SILENT : no reply
+SILENT --> ALARM : 10th missed read\n[one CRITICAL error:\nGRBL module not responding]
+SILENT --> STOPPED : reply I
+SILENT --> RUNNING : reply R, J, H
+SILENT --> ALARM : reply A
+
+note bottom of SILENT
+  Any reply resets the missed-read counter.
+end note
+@enduml
