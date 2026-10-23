@@ -69,6 +69,15 @@ TEST_F(AddresserTest, WarehouseIdSelectsMatchingBin)
     EXPECT_EQ(addresser.resolve("04:1A:2B"), Bin::BIN3);
 }
 
+TEST_F(AddresserTest, AcceptsWarehouseKeyAsDocumentedInSwagger)
+{
+    ON_CALL(http, get(_, _)).WillByDefault(Return(HttpResponse{200, String(
+        "[{\"id\":\"12\",\"array_options\":{\"options_default_target_warehouse_id\":\"2\"}}]")}));
+    ON_CALL(http, post(_, _, _)).WillByDefault(Return(HttpResponse{201, String("{}")}));
+
+    EXPECT_EQ(addresser.resolve("04:1A:2B"), Bin::BIN2);
+}
+
 TEST_F(AddresserTest, UnknownWarehouseIsNotSortedAndNoStockMovementIsRecorded)
 {
     ON_CALL(http, get(_, _)).WillByDefault(Return(productIn(7)));

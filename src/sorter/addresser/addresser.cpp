@@ -90,6 +90,10 @@ int Addresser::extractWarehouseId(const String &json) const
     const char *warehouseId =
         product["array_options"]["options_options_default_target_warehouse_id"];
 
+    // The Swagger spec documents the key without the double "options_" prefix
+    if (warehouseId == nullptr)
+        warehouseId = product["array_options"]["options_default_target_warehouse_id"];
+
     if (warehouseId == nullptr)
         return -1;
 
