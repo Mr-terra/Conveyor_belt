@@ -98,7 +98,7 @@ rule, so it does not show this. See the open point in section 8.
 ## 6. Scheduler and recovery
 
 - `WAITING`: nothing is driven. **A** starts `CHECK_CONNECT`.
-- `CHECK_CONNECT`: checks Dolibarr, the GRBL module, the RFID reader and the servo board. On
+- `CHECK_CONNECT`: checks the GRBL module, the RFID reader and the servo board (the Dolibarr check is disabled). On
   success it goes to `INIT_POSITIONS`; on failure, back to `WAITING`.
 - `INIT_POSITIONS`: placeholder steps; success moves to `PRODUCTION`.
 - `PRODUCTION`: the conveyor runs and the sorter handles each card. An alarm stops it (section 5).

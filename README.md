@@ -15,7 +15,7 @@ Developed as part of the Epitech MSc Pro IoT project (T-IOT-911).
 - **Hardware-driven state**: the conveyor state is read from the GRBL module on every cycle. The software never assumes that a command worked.
 - **Error management**: errors are classified (`INFO`, `WARNING`, `CRITICAL`, `FATAL`). A critical error stops the system and stays latched until the operator presses Start (see [Usage](#usage)).
 - **Silent module watchdog**: if the GRBL module gives no status for 10 consecutive reads (1 s), the conveyor is treated as in alarm and a critical error is raised.
-- **Connection checks**: the Dolibarr API, the GRBL motor, the RFID reader and the servo board are probed before production starts.
+- **Connection checks**: the GRBL motor, the RFID reader and the servo board are probed before production starts. The Dolibarr check is implemented but disabled in the start sequence (see `docs/OVERVIEW.md`).
 - **Sorting flow**: RFID read → Dolibarr product lookup → stock movement → servo moved to the matching bin. Parcels that cannot be routed go to the error bin.
 - **Timeouts**: HTTP requests to Dolibarr give up after 5 seconds, so a silent server cannot freeze the controls.
 - **Host unit tests**: the firmware logic runs on a PC with googletest and gMock, without an ESP32.
@@ -202,7 +202,7 @@ The firmware job needs these repository secrets: `DOLIBARR_URL`, `DOLIBARR_API_K
 └── lib/GoPlus2/            Vendored GoPlus2 servo driver (third-party, not in the PlatformIO registry)
 ```
 
-Further documentation is in `docs/`: system usage (`SYSTEM_USAGE.md`), build and test
+Further documentation is in `docs/`: a system overview (`OVERVIEW.md`), UML diagrams (`uml/`), system usage (`SYSTEM_USAGE.md`), build and test
 details (`CMAKE_BUILD_TESTS.md`), the state flow (`state_management_error.md`) and the
 test protocol (`TEST_PROTOCOL.md`). `TEST_PROTOCOL.md` is a manual protocol from the school
 project; its Python file layout is historical.

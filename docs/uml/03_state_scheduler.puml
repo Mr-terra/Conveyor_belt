@@ -11,7 +11,7 @@ skinparam state {
 [*] --> WAITING : setup() ends with triggerStop()
 
 state WAITING : nothing is driven
-state CHECK_CONNECT : Dolibarr, GRBL, RFID and servo\nare probed
+state CHECK_CONNECT : GRBL, RFID and servo\nare probed\n(Dolibarr check disabled)
 state INIT_POSITIONS : placeholder steps
 state PRODUCTION : conveyor moves forward every tick\nsorter.production() runs every tick
 state ERROR <<error>> : conveyor stopped\ncritical error may be latched
