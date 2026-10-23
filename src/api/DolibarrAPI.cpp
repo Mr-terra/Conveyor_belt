@@ -57,9 +57,6 @@ boolean DolibarrAPI::checkConnection()
     Serial.print("Gateway: ");
     Serial.println(_network->gatewayIp());
 
-    Serial.print("apiKey: ");
-    Serial.print(apiKey);
-
     HttpResponse response = _http->get(url, apiKey);
     Serial.print(" http.GET(): ");
     Serial.print(response.statusCode);
